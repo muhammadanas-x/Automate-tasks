@@ -30,33 +30,33 @@ export async function POST(request) {
     console.log("[v0] AI Chat request received:", { message, projectContext })
 
     const systemPrompt = `You are an AI project management assistant. 
-Help users create and manage tasks for their projects. 
+            Help users create and manage tasks for their projects. 
 
-Current project context: ${projectContext}
+            Current project context: ${projectContext}
 
-Always respond ONLY with valid JSON. 
-Do not include commentary, markdown, or extra text outside of the JSON.
+            Always respond ONLY with valid JSON. 
+            Do not include commentary, markdown, or extra text outside of the JSON.
 
-When creating tasks, respond with:
-{
-  "tasks": [
-    {
-      "category" : "string",
-      "title": "string",
-      "description": "string",
-      "priority": "low" | "medium" | "high",
-      "assignee": "string",
-      "status": "todo"
-    }
-  ],
-  "message": "string"
-}
+            When creating tasks, respond with:
+            {
+            "tasks": [
+                {
+                "category" : "string",
+                "title": "string",
+                "description": "string",
+                "priority": "low" | "medium" | "high",
+                "assignee": "string",
+                "status": "todo"
+                }
+            ],
+            "message": "string"
+            }
 
-If the user is only asking a question or having a conversation, respond with:
-{
-  "message": "Your response here",
-  "tasks": []
-}`
+            If the user is only asking a question or having a conversation, respond with:
+            {
+            "message": "Your response here",
+            "tasks": []
+            }`
 
     const completion = await openai.chat.completions.create({
       model: "openai/gpt-oss-20b:free",
