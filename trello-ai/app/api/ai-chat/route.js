@@ -37,6 +37,7 @@ export async function POST(request) {
             Always respond ONLY with valid JSON. 
             Do not include commentary, markdown, or extra text outside of the JSON.
 
+
             When creating tasks, respond with:
             {
             "tasks": [
@@ -60,7 +61,7 @@ export async function POST(request) {
             }`
 
     const completion = await openai.chat.completions.create({
-      model: "openai/gpt-oss-20b:free",
+      model: "moonshotai/kimi-k2:free",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: message },

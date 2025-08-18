@@ -530,6 +530,17 @@ export function KanbanBoard({ projectId }) {
               />
             </div>
 
+            <div>
+              <Label className="text-sm font-medium">Task Status (Please update on this field) </Label>
+              <Textarea
+                value={"Update on this field"}
+                onChange={(e) =>
+                  setSelectedTask({ ...selectedTask, taskStatus: e.target.value })
+                }
+              />
+            </div>
+
+
             {/* Priority */}
             <div>
               <Label className="text-sm font-medium">Priority</Label>
@@ -568,7 +579,7 @@ export function KanbanBoard({ projectId }) {
       </DialogContent>
     </Dialog>
 
-    
+
     </div>
   )
 }
