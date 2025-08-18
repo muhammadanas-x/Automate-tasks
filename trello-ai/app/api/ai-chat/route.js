@@ -45,6 +45,7 @@ export async function POST(request) {
                 "title": "string",
                 "description": "string",
                 "priority": "low" | "medium" | "high",
+                "taskStatus" : "string",
                 "assignee": "string",
                 "status": "todo"
                 }

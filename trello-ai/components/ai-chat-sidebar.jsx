@@ -32,16 +32,16 @@ const getQuickPrompts = (projectId) => {
   }
 }
 
-const getProjectContext = (projectId) => {
-  switch (projectId) {
-    case "space-shooter":
-      return "Space Shooter Game. I've proposed a new project called 'Space Shooter Game' with the key focus on getting started on it tonight, focusing on core gameplay elements:"
-    case "ai-app":
-      return "AI Project Management App. Working on building a comprehensive project management tool with AI assistance for task creation and planning:"
-    case "dinner-plan":
-      return "Dinner Plan with Friends. Organizing and planning dinner events with friends, managing guest lists, menus, and logistics:"
-    default:
-      return "New Project. Starting a fresh project and looking for guidance on initial setup and task planning:"
+const getProjectContext = (projectId, tasks, getProjectTasks) => {
+  // Option 1: all tasks of this project
+  const projectTasks = getProjectTasks(projectId)
+
+  // Option 2: filter tasks manually
+  // const projectTasks = tasks.filter((t) => t.projectId === projectId)
+
+  return {
+    projectId,
+    tasks: projectTasks,
   }
 }
 
@@ -74,7 +74,7 @@ const generateAIResponse = (userMessage, projectId, createTask) => {
 }
 
 export function AiChatSidebar({ projectId }) {
-  const { createTask, currentProject } = useProject()
+  const { createTask, currentProject, tasks, getProjectTasks } = useProject()
   const [messages, setMessages] = useState([])
   const [inputValue, setInputValue] = useState("")
   const [isTyping, setIsTyping] = useState(false)
@@ -82,7 +82,10 @@ export function AiChatSidebar({ projectId }) {
   const inputRef = useRef(null)
 
   const quickPrompts = getQuickPrompts(projectId)
-  const projectContext = getProjectContext(projectId)
+  const projectContext = getProjectContext(projectId, tasks, getProjectTasks)
+
+
+  console.log(projectContext.tasks)
 
   // Auto-scroll to bottom when new messages are added
   useEffect(() => {
@@ -116,7 +119,7 @@ export function AiChatSidebar({ projectId }) {
         },
         body: JSON.stringify({
           message: content,
-          projectContext: `${currentProject?.name || "New Project"}: ${projectContext}`,
+          projectContext: `${currentProject?.name || "New Project"}: Already Implemented ${projectContext.tasks} `,
         }),
       })
 
@@ -133,6 +136,7 @@ export function AiChatSidebar({ projectId }) {
 
       // Add any tasks returned by AI
       if (data.tasks && data.tasks.length > 0) {
+        console.log(data.tasks)
         data.tasks.forEach((task) => {
           createTask({
             ...task,
@@ -193,7 +197,7 @@ export function AiChatSidebar({ projectId }) {
               {currentProject?.name || "New Project"}
             </span>
           </p>
-          <p className="text-xs text-gray-500 mt-2">{projectContext}</p>
+        <p className="text-xs text-gray-500 mt-2">{projectContext.projectId}</p>
         </CardContent>
       </Card>
 

@@ -6,7 +6,7 @@ import { Search, Bell, Plus, MoreHorizontal, User } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useState, useEffect } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -57,6 +57,19 @@ export function KanbanBoard({ projectId }) {
   const [searchTerm, setSearchTerm] = useState("")
   const [isNewTaskOpen, setIsNewTaskOpen] = useState(false)
   const [newTaskColumn, setNewTaskColumn] = useState("todo")
+  const [selectedTask, setSelectedTask] = useState(null)
+
+  const handleCardClick = (task) => {
+    setSelectedTask(task)
+  }
+
+  const handleSave = () => {
+    if (selectedTask) {
+      updateTask(selectedTask.id, selectedTask)
+      setSelectedTask(null)
+    }
+  }
+
   const [newTask, setNewTask] = useState({
     title: "",
     description: "",
@@ -176,9 +189,12 @@ export function KanbanBoard({ projectId }) {
             <div className="space-y-3 flex-1 overflow-y-auto pr-2">
               {tasksByStatus.todo.map((task) => (
                 <Card
+                  onClick={() => handleCardClick(task)}
                   key={task.id}
                   className="cursor-pointer hover:shadow-lg transition-all duration-300 group backdrop-blur-sm bg-white/80 border-white/20 hover:bg-white/90"
                 >
+                   
+
                   <CardHeader className="pb-2">
                     <div className="flex items-center justify-between">
                       <div className="text-xs text-gray-500 mb-1">{task.id}</div>
@@ -471,6 +487,88 @@ export function KanbanBoard({ projectId }) {
           </div>
         </DialogContent>
       </Dialog>
+
+
+       <Dialog open={!!selectedTask} onOpenChange={() => setSelectedTask(null)}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Edit Task</DialogTitle>
+        </DialogHeader>
+
+        {selectedTask && (
+          <div className="space-y-4">
+            {/* Title */}
+            <div>
+              <Label className="text-sm font-medium">Title</Label>
+              <Input
+                value={selectedTask.title}
+                onChange={(e) =>
+                  setSelectedTask({ ...selectedTask, title: e.target.value })
+                }
+              />
+            </div>
+
+            {/* Description */}
+            <div>
+              <Label className="text-sm font-medium">Description</Label>
+              <Textarea
+                value={selectedTask.description}
+                onChange={(e) =>
+                  setSelectedTask({ ...selectedTask, description: e.target.value })
+                }
+              />
+            </div>
+
+            {/* Assignee */}
+            <div>
+              <Label className="text-sm font-medium">Assignee</Label>
+              <Input
+                value={selectedTask.assignee}
+                onChange={(e) =>
+                  setSelectedTask({ ...selectedTask, assignee: e.target.value })
+                }
+              />
+            </div>
+
+            {/* Priority */}
+            <div>
+              <Label className="text-sm font-medium">Priority</Label>
+              <Select
+                value={selectedTask.priority}
+                onValueChange={(val) =>
+                  setSelectedTask({ ...selectedTask, priority: val })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        )}
+
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => setSelectedTask(null)}>
+            Cancel
+          </Button>
+          <Button
+            onClick={() => {
+              handleSave()
+              setSelectedTask(null)
+            }}
+          >
+            Save
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    
     </div>
   )
 }
