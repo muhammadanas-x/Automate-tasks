@@ -205,20 +205,23 @@ export function ProjectProvider({ children }) {
     setTasks((prev) => prev.filter((t) => t.projectId !== projectId))
   }
 
+  
   const createTask = (taskData) => {
     const projectTasks = tasks.filter((t) => t.projectId === taskData.projectId)
-    const taskNumber = projectTasks.length + 1
+    let taskNumber = projectTasks.length + 1
     const projectPrefix = taskData.projectId.toUpperCase().substring(0, 3)
 
+
     const newTask = {
-      ...taskData,
-      id: `${projectPrefix}-T-${String(taskNumber).padStart(3, "0")}`,
-      createdAt: new Date().toISOString().split("T")[0],
+    ...taskData,
+    id: `${projectPrefix}-T-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`, 
+    createdAt: new Date().toISOString().split("T")[0],
     }
+
+
 
     setTasks((prev) => [...prev, newTask])
 
-    // Update project task count
     setProjects((prev) => prev.map((p) => (p.id === taskData.projectId ? { ...p, taskCount: p.taskCount + 1 } : p)))
   }
 

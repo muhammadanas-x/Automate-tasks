@@ -133,7 +133,6 @@ export function AiChatSidebar({ projectId }) {
 
       // Add any tasks returned by AI
       if (data.tasks && data.tasks.length > 0) {
-        console.log(data.tasks)
         data.tasks.forEach((task) => {
           createTask({
             ...task,
