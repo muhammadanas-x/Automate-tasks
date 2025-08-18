@@ -138,10 +138,11 @@ export function KanbanBoard({ projectId }) {
       </div>
 
       {/* Kanban Columns */}
-      <div className="flex-1 p-6">
+      <div className="flex-1 p-6 overflow-hidden">
         <div className="grid grid-cols-3 gap-6 h-full">
+          
           {/* To Do Column */}
-          <div className="flex flex-col">
+          <div className="flex flex-col overflow-hidden">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-gray-900">To Do</h3>
               <div className="flex items-center gap-2">
@@ -170,7 +171,9 @@ export function KanbanBoard({ projectId }) {
                 </Dialog>
               </div>
             </div>
-            <div className="space-y-3 flex-1">
+
+            {/* 👇 Scrollable list */}
+            <div className="space-y-3 flex-1 overflow-y-auto pr-2">
               {tasksByStatus.todo.map((task) => (
                 <Card
                   key={task.id}
@@ -222,7 +225,7 @@ export function KanbanBoard({ projectId }) {
           </div>
 
           {/* In Progress Column */}
-          <div className="flex flex-col">
+          <div className="flex flex-col overflow-hidden">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-gray-900">In Progress</h3>
               <div className="flex items-center gap-2">
@@ -251,7 +254,9 @@ export function KanbanBoard({ projectId }) {
                 </Dialog>
               </div>
             </div>
-            <div className="space-y-3 flex-1">
+
+            {/* 👇 Scrollable list */}
+            <div className="space-y-3 flex-1 overflow-y-auto pr-2">
               {tasksByStatus.inProgress.map((task) => (
                 <Card
                   key={task.id}
@@ -303,7 +308,7 @@ export function KanbanBoard({ projectId }) {
           </div>
 
           {/* Done Column */}
-          <div className="flex flex-col">
+          <div className="flex flex-col overflow-hidden">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-gray-900">Done</h3>
               <div className="flex items-center gap-2">
@@ -332,7 +337,9 @@ export function KanbanBoard({ projectId }) {
                 </Dialog>
               </div>
             </div>
-            <div className="space-y-3 flex-1">
+
+            {/* 👇 Scrollable list */}
+            <div className="space-y-3 flex-1 overflow-y-auto pr-2">
               {tasksByStatus.done.map((task) => (
                 <Card
                   key={task.id}
@@ -382,6 +389,7 @@ export function KanbanBoard({ projectId }) {
               ))}
             </div>
           </div>
+
         </div>
       </div>
 
@@ -417,6 +425,7 @@ export function KanbanBoard({ projectId }) {
                 className="bg-white/50 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20"
               />
             </div>
+
             <div>
               <Label htmlFor="task-assignee" className="text-gray-700">
                 Assignee

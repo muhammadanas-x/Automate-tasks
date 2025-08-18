@@ -41,6 +41,7 @@ When creating tasks, respond with:
 {
   "tasks": [
     {
+      "category" : "string",
       "title": "string",
       "description": "string",
       "priority": "low" | "medium" | "high",

@@ -41,7 +41,7 @@ export function ProjectSidebar({ currentProjectId }) {
           <div className="w-4 h-4 bg-white rounded-sm" />
         </div>
         <span className="font-semibold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-          Pilot
+          TrelloAI
         </span>
       </div>
 
