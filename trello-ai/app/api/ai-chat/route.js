@@ -1,10 +1,7 @@
 import { NextResponse } from "next/server"
-import OpenAI from "openai"
+import { GoogleGenAI } from "@google/genai"
 
-const openai = new OpenAI({
-  baseURL: "https://openrouter.ai/api/v1",
-  apiKey: "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", // ⚡ don't hardcode secrets
-})
+const ai = new GoogleGenAI({ apiKey: "AIzaSyDNfkJBlHiY1dEro5BDLyoLFZoBeCerqKw" })
 
 // --- helper to safely parse JSON ---
 function safeJsonParse(str) {
@@ -23,57 +20,144 @@ function safeJsonParse(str) {
   }
 }
 
+// --- helper to detect if user is asking for existing task info ---
+function isQueryingExistingTasks(message) {
+  const queryKeywords = [
+    'show', 'find', 'search', 'get', 'what', 'which', 'where', 'when',
+    'status of', 'progress', 'update on', 'assigned to', 'who is',
+    'how many', 'list', 'display', 'tell me about', 'info about',"show","taskStatus"
+  ]
+  
+  const messageLower = message.toLowerCase()
+  return queryKeywords.some(keyword => messageLower.includes(keyword))
+}
+
+// --- helper to perform RAG search ---
+async function performRAGSearch(query) {
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+    const response = await fetch(`${baseUrl}/api/tasks/search?query=${encodeURIComponent(query)}`)
+    
+    if (!response.ok) {
+      if (response.status === 404) {
+        return null // No matching tasks found
+      }
+      throw new Error(`RAG search failed: ${response.status}`)
+    }
+    
+    return await response.json()
+  } catch (error) {
+    console.error('[RAG Search Error]:', error)
+    return null
+  }
+}
+
 export async function POST(request) {
   try {
     const { message, projectContext } = await request.json()
 
     console.log("[v0] AI Chat request received:", { message, projectContext })
 
+    // Check if user is querying existing tasks
+    const isQuerying = isQueryingExistingTasks(message)
+    
+    if (isQuerying) {
+      console.log("[v0] Detected query for existing tasks, performing RAG search...")
+      
+      // Perform RAG search
+      const ragResult = await performRAGSearch(message)
+      
+      if (!ragResult) {
+        return NextResponse.json({
+          message: "I couldn't find any tasks matching your query. Would you like to create a new task instead?",
+          tasks: []
+        })
+      }
+
+      // Use AI to generate a response based on the retrieved task data
+      const ragSystemPrompt = `You are an AI project management assistant. 
+        The user asked about existing tasks and I found this relevant task data:
+        
+        Task Data: ${JSON.stringify(ragResult)}
+        
+        Current project context: ${projectContext}
+        
+        Please provide a helpful response about this task information. 
+        Always respond ONLY with valid JSON in this format:
+        {
+          "message": "string - your response about the task(s)",
+          "tasks": [task objects if you want to display them, otherwise empty array],
+          "foundTask": true
+        }
+        
+        Do not include commentary, markdown, or extra text outside of the JSON.`
+
+      const ragResponse = await ai.models.generateContent({
+        model: "models/gemini-2.5-flash",
+        contents: [
+          {
+            role: "user",
+            parts: [{ text: `${ragSystemPrompt}\n\nUser query: ${message}` }],
+          },
+        ],
+      })
+
+      const ragContent = ragResponse.text
+      console.log("[v0] RAG-based Gemini response:", ragContent)
+
+      const ragJsonResponse = safeJsonParse(ragContent || "{}")
+      
+      // Include the original task data for frontend use if needed
+      ragJsonResponse.retrievedTask = ragResult
+      
+      return NextResponse.json(ragJsonResponse)
+    }
+
+    // Original task creation logic
     const systemPrompt = `You are an AI project management assistant. 
-            Help users create and manage tasks for their projects. 
+        Help users create and manage tasks for their projects. 
+        DONT ADD MARKDOWN FORMATTED JSON
 
-            Current project context: ${projectContext}
+        Current project context: ${projectContext}
 
-            Always respond ONLY with valid JSON. 
-            Do not include commentary, markdown, or extra text outside of the JSON.
+        Rules:
+        1. Always respond ONLY with valid JSON. 
+        2. Do not include commentary, markdown, or extra text outside of the JSON. 
+        3. Do not include markdown formatting. 
 
 
-            When creating tasks, respond with:
+        The user is requesting to create new tasks. Respond with:
+        {
+          "tasks": [
             {
-            "tasks": [
-                {
-                "category" : "string",
-                "title": "string",
-                "description": "string",
-                "priority": "low" | "medium" | "high",
-                "taskStatus" : "string",
-                "assignee": "string",
-                "status": "todo"
-                }
-            ],
-            "message": "string"
+              "category": "string",
+              "title": "string", 
+              "description": "string",
+              "priority": "low" | "medium" | "high",
+              "taskStatus": "string",
+              "assignee": "string",
+              "status": "todo"
             }
+          ],
+          "message": "string"
+        }`
 
-            If the user is only asking a question or having a conversation, respond with:
-            {
-            "message": "Your response here",
-            "tasks": []
-            }`
-
-    const completion = await openai.chat.completions.create({
-      model: "moonshotai/kimi-k2:free",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: message },
+    const response = await ai.models.generateContent({
+      model: "models/gemini-2.5-flash",
+      contents: [
+        {
+          role: "user",
+          parts: [{ text: `${systemPrompt}\n\nUser: ${message}` }],
+        },
       ],
-      temperature: 0.7,
-      response_format: { type: "json_object" }, // 👈 force JSON
     })
 
-    const response = completion.choices[0].message.content
-    console.log("[v0] OpenAI response:", response)
+    const content = response.text
+    console.log("[v0] Gemini response:", content)
 
-    const jsonResponse = safeJsonParse(response || "{}")
+    const jsonResponse = safeJsonParse(content || "{}")
+
+    console.log(jsonResponse)
     return NextResponse.json(jsonResponse)
 
   } catch (error) {

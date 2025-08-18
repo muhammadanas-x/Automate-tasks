@@ -136,15 +136,24 @@ export function AiChatSidebar({ projectId }) {
 
       // Add any tasks returned by AI
       if (data.tasks && data.tasks.length > 0) {
-        console.log(data.tasks)
-        data.tasks.forEach((task) => {
-          createTask({
-            ...task,
-            projectId: projectId,
-          })
-        })
-      }
+            console.log('AI returned tasks:', data.tasks);
 
+            // Send the whole array to our /api/tasks endpoint
+            try {
+                await fetch('/api/tasks', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data.tasks),   // expects [{...}, {...}]
+                });
+            } catch (storeErr) {
+                console.error('Failed to store AI tasks:', storeErr);
+            }
+
+            // …then create them in local state (or skip if you prefer to re-read from DB)
+            data.tasks.forEach(task =>
+                createTask({ ...task, projectId })
+            );
+            }
       const aiMessage = {
         id: (Date.now() + 1).toString(),
         content: data.message || "I'm here to help with your project management needs!",

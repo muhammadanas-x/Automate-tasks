@@ -79,6 +79,8 @@ export function KanbanBoard({ projectId }) {
 
   const tasks = getProjectTasks(projectId)
 
+  console.log(tasks)
+
   useEffect(() => {
     setCurrentProject(projectId)
   }, [projectId, setCurrentProject])

@@ -21,7 +21,7 @@ function to1024(vec384) {
 // 3.  Upsert helper
 // -------------------------------------------------
 async function upsertTask(task) {
-  const text = `${task.title} ${task.description}`;
+  const text = `${task.title} ${task.description} ${task.taskStatus}`;
   const output = await embedder(text, { pooling: 'mean', normalize: true });
   const vector384 = Array.from(output.data);
   const vector1024 = to1024(vector384);   // <- pad
