@@ -1,8 +1,24 @@
+'use client'
+
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
+import { useRouter } from "next/navigation"
+import Link from "next/link"
 
 export default function Home() {
+  const router = useRouter()
+
+
+  const handleLogin = () => {
+    router.push("/login")
+  }
+
+
+  const handleSignup = () => {
+        router.push("/signup")
+
+  }
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 relative overflow-hidden">
       <div className="absolute inset-0 pointer-events-none">
@@ -31,15 +47,20 @@ export default function Home() {
           >
             Contact
           </a>
-          <Button
-            variant="outline"
-            className="rounded-full bg-white/50 backdrop-blur-sm border-gray-200/50 hover:bg-white/80 hover:scale-105 transition-all duration-300"
-          >
-            Login
-          </Button>
+          <Link href={"/signup"}>
+            <Button
+              variant="outline"
+              className="rounded-full bg-white/50 backdrop-blur-sm border-gray-200/50 hover:bg-white/80 hover:scale-105 transition-all duration-300"
+            >
+              Login
+            </Button>
+          </Link>
+          <Link href={"/login"}>
           <Button className="rounded-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300">
             Sign Up
           </Button>
+        </Link>
+
         </div>
       </nav>
 
