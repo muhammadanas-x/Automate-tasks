@@ -1,5 +1,8 @@
-import { ProjectLayout } from "@/components/project-layout"
+// app/create/[projectId]/page.js
 
-export default function ProjectPage({ params }) {
-  return <ProjectLayout projectId={params.projectId} />
+import {ProjectLayout} from "@/components/project-layout"
+
+export default async function ProjectPage({ params }) {
+  const { projectId } = await params
+  return <ProjectLayout projectId={projectId} />
 }
