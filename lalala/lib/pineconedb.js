@@ -1,9 +1,4 @@
-// app/api/tasks/route.js
-import { NextResponse } from "next/server"
-import dbConnect from "@/lib/mongodb"
-import Task from "@/models/Task"
-import Project from "@/models/Project"
-import jwt from "jsonwebtoken"
+// lib/pineconeUtils.js
 import { Pinecone } from '@pinecone-database/pinecone'
 import { pipeline } from '@xenova/transformers'
 
@@ -59,8 +54,8 @@ async function generateTaskEmbedding(task) {
   }
 }
 
-// Store task in Pinecone
-async function upsertTaskToPinecone(task) {
+// Store/Update task in Pinecone
+export async function upsertTaskToPinecone(task) {
   try {
     const embedding = await generateTaskEmbedding(task)
     
@@ -83,15 +78,15 @@ async function upsertTaskToPinecone(task) {
     }
     
     await index.upsert([vector])
-    console.log(`Task ${task._id} stored in Pinecone successfully`)
+    console.log(`Task ${task._id} synced to Pinecone successfully`)
   } catch (error) {
-    console.error('Error storing task in Pinecone:', error)
+    console.error('Error syncing task to Pinecone:', error)
     // Don't throw here to avoid breaking the main operation
   }
 }
 
 // Delete task from Pinecone
-async function deleteTaskFromPinecone(taskId) {
+export async function deleteTaskFromPinecone(taskId) {
   try {
     await index.deleteOne(taskId.toString())
     console.log(`Task ${taskId} deleted from Pinecone successfully`)
@@ -101,70 +96,5 @@ async function deleteTaskFromPinecone(taskId) {
   }
 }
 
-export async function GET(req) {
-  try {
-    const token = req.cookies.get("token")?.value
-    if (!token) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET)
-    await dbConnect()
-
-    const tasks = await Task.find({ userId: decoded.userId })
-    return NextResponse.json({ tasks }, { status: 200 })
-  } catch (error) {
-    console.error("Tasks API error:", error)
-    return NextResponse.json(
-      { message: "Internal server error" },
-      { status: 500 }
-    )
-  }
-}
-
-export async function POST(req) {
-  try {
-    const token = req.cookies.get("token")?.value
-    if (!token) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET)
-    await dbConnect()
-
-    const body = await req.json()
-    const taskData = {
-      ...body,
-      userId: decoded.userId,
-    }
-
-    // Create task in MongoDB
-    const task = await Task.create(taskData)
-
-    // Update project task count
-    if (taskData.projectId) {
-      await Project.findByIdAndUpdate(taskData.projectId, {
-        $inc: { taskCount: 1 },
-      })
-    }
-
-    // Store task in Pinecone (async, don't wait for it)
-    upsertTaskToPinecone(task).catch(error => {
-      console.error('Failed to store task in Pinecone:', error)
-    })
-
-    return NextResponse.json({ task }, { status: 201 })
-  } catch (error) {
-    console.error("Tasks API error:", error)
-    if (error.name === 'ValidationError') {
-      return NextResponse.json(
-        { message: "Validation error", errors: error.errors },
-        { status: 400 }
-      )
-    }
-    return NextResponse.json(
-      { message: "Internal server error" },
-      { status: 500 }
-    )
-  }
-}
+// Get embedder for search operations
+export { getEmbedder }

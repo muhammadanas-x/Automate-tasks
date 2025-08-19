@@ -32,15 +32,27 @@ function isQueryingExistingTasks(message) {
   return queryKeywords.some(keyword => messageLower.includes(keyword))
 }
 
-// --- helper to perform RAG search ---
-async function performRAGSearch(query) {
+// --- helper to perform RAG search with authentication ---
+async function performRAGSearch(query, request) {
   try {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
-    const response = await fetch(`${baseUrl}/api/tasks/search?query=${encodeURIComponent(query)}`)
+    
+    // Forward cookies from the original request
+    const cookies = request.headers.get('cookie')
+    
+    const response = await fetch(`${baseUrl}/api/tasks/search?query=${encodeURIComponent(query)}`, {
+      headers: {
+        'Cookie': cookies || '',
+        'Content-Type': 'application/json'
+      }
+    })
     
     if (!response.ok) {
       if (response.status === 404) {
         return null // No matching tasks found
+      }
+      if (response.status === 401) {
+        throw new Error('Authentication required')
       }
       throw new Error(`RAG search failed: ${response.status}`)
     }
@@ -48,6 +60,12 @@ async function performRAGSearch(query) {
     return await response.json()
   } catch (error) {
     console.error('[RAG Search Error]:', error)
+    
+    // Re-throw authentication errors so they can be handled properly
+    if (error.message === 'Authentication required') {
+      throw error
+    }
+    
     return null
   }
 }
@@ -64,57 +82,70 @@ export async function POST(request) {
     if (isQuerying) {
       console.log("[v0] Detected query for existing tasks, performing RAG search...")
       
-      // Perform RAG search
-      const ragResult = await performRAGSearch(message)
-      
-      if (!ragResult) {
-        return NextResponse.json({
-          message: "I couldn't find any tasks matching your query. Would you like to create a new task instead?",
-          tasks: []
-        })
-      }
-
-      // Use AI to generate a response based on the retrieved task data
-      const ragSystemPrompt = `You are an AI project management assistant. 
-        The user asked about existing tasks and I found this relevant task data:
+      try {
+        // Perform RAG search with authentication
+        const ragResult = await performRAGSearch(message, request)
         
-        Task Data: ${JSON.stringify(ragResult)}
-        
-        Current project context: ${projectContext}
-        Rules:
-        1. Always respond ONLY with valid JSON. 
-        2. Do not include commentary, markdown, or extra text outside of the JSON. 
-        3. Do not include markdown formatting. 
-
-
-        Please provide a helpful response about this task information. 
-        Always respond ONLY with valid JSON in this format:
-        {
-          "message": "string - your response about the task(s)",
-          "tasks": [task objects if you want to display them, otherwise empty array],
-          "foundTask": true
+        if (!ragResult) {
+          return NextResponse.json({
+            message: "I couldn't find any tasks matching your query. Would you like to create a new task instead?",
+            tasks: []
+          })
         }
-        `
 
-      const ragResponse = await ai.models.generateContent({
-        model: "models/gemini-2.5-flash",
-        contents: [
+        // Use AI to generate a response based on the retrieved task data
+        const ragSystemPrompt = `You are an AI project management assistant. 
+          The user asked about existing tasks and I found this relevant task data:
+          
+          Task Data: ${JSON.stringify(ragResult)}
+          
+          Current project context: ${projectContext}
+          Rules:
+          1. Always respond ONLY with valid JSON. 
+          2. Do not include commentary, markdown, or extra text outside of the JSON. 
+          3. Do not include markdown formatting. 
+
+          Please provide a helpful response about this task information. 
+          Always respond ONLY with valid JSON in this format:
           {
-            role: "user",
-            parts: [{ text: `${ragSystemPrompt}\n\nUser query: ${message}` }],
-          },
-        ],
-      })
+            "message": "string - your response about the task(s)",
+            "tasks": [task objects if you want to display them, otherwise empty array],
+            "foundTask": true
+          }
+          `
 
-      const ragContent = ragResponse.text
-      console.log("[v0] RAG-based Gemini response:", ragContent)
+        const ragResponse = await ai.models.generateContent({
+          model: "models/gemini-2.5-flash",
+          contents: [
+            {
+              role: "user",
+              parts: [{ text: `${ragSystemPrompt}\n\nUser query: ${message}` }],
+            },
+          ],
+        })
 
-      const ragJsonResponse = safeJsonParse(ragContent || "{}")
-      
-      // Include the original task data for frontend use if needed
-      ragJsonResponse.retrievedTask = ragResult
-      
-      return NextResponse.json(ragJsonResponse)
+        const ragContent = ragResponse.text
+        console.log("[v0] RAG-based Gemini response:", ragContent)
+
+        const ragJsonResponse = safeJsonParse(ragContent || "{}")
+        
+        // Include the original task data for frontend use if needed
+        ragJsonResponse.retrievedTask = ragResult
+        
+        return NextResponse.json(ragJsonResponse)
+        
+      } catch (error) {
+        if (error.message === 'Authentication required') {
+          return NextResponse.json({
+            message: "Authentication required to search tasks.",
+            tasks: [],
+            error: "unauthorized"
+          }, { status: 401 })
+        }
+        
+        // For other errors, fall back to task creation mode
+        console.warn("[v0] RAG search failed, falling back to task creation:", error.message)
+      }
     }
 
     // Original task creation logic
@@ -128,7 +159,6 @@ export async function POST(request) {
         1. Always respond ONLY with valid JSON. 
         2. Do not include commentary, markdown, or extra text outside of the JSON. 
         3. Do not include markdown formatting. 
-
 
         The user is requesting to create new tasks. Respond with:
         {

@@ -65,7 +65,7 @@ export function KanbanBoard({ projectId }) {
 
   const handleSave = () => {
     if (selectedTask) {
-      updateTask(selectedTask.id, selectedTask)
+      updateTask(selectedTask._id, selectedTask)
       setSelectedTask(null)
     }
   }

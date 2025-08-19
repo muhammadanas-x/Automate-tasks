@@ -5,6 +5,102 @@ import Task from "@/models/Task"
 import Project from "@/models/Project"
 import jwt from "jsonwebtoken"
 import mongoose from "mongoose"
+import { Pinecone } from '@pinecone-database/pinecone'
+import { pipeline } from '@xenova/transformers'
+
+// Pinecone setup
+const pc = new Pinecone({
+  apiKey: process.env.PINECONE_API_KEY || "pcsk_2ZfMks_9jAq99bkxRTgVFK2SggAsdBQbzM5aNmDgcV9YEMEZAnMDc8Yv9ZkuqDVcyb5iQi",
+})
+
+const index = pc.index('task-vector')
+
+// Initialize the embedding model (1024 dimensions)
+let embedder = null
+
+async function getEmbedder() {
+  if (!embedder) {
+    console.log('Loading 1024D embedder...')
+    embedder = await pipeline('feature-extraction', 'Xenova/e5-large-v2')
+    console.log('1024D Embedder loaded successfully')
+  }
+  return embedder
+}
+
+// Generate embedding for task content
+async function generateTaskEmbedding(task) {
+  try {
+    const model = await getEmbedder()
+    
+    // Combine relevant task fields for embedding
+    const taskText = [
+      task.title || '',
+      task.description || '',
+      task.category || '',
+      task.priority || '',
+      task.status || '',
+      task.assignee || ''
+    ].filter(Boolean).join(' ')
+    
+    if (!taskText.trim()) {
+      throw new Error('No text content available for embedding')
+    }
+    
+    const output = await model(taskText, { pooling: 'mean', normalize: true })
+    const embedding = Array.from(output.data)
+    
+    if (embedding.length !== 1024) {
+      throw new Error(`Expected 1024 dimensions, got ${embedding.length}`)
+    }
+    
+    return embedding
+  } catch (error) {
+    console.error('Error generating embedding:', error)
+    throw error
+  }
+}
+
+// Store/Update task in Pinecone
+async function upsertTaskToPinecone(task) {
+  try {
+    const embedding = await generateTaskEmbedding(task)
+    
+    const vector = {
+      id: task._id.toString(),
+      values: embedding,
+      metadata: {
+        userId: task.userId.toString(),
+        title: task.title || '',
+        description: task.description || '',
+        category: task.category || '',
+        priority: task.priority || '',
+        status: task.status || '',
+        taskStatus: task.taskStatus || '',
+        assignee: task.assignee || '',
+        projectId: task.projectId ? task.projectId.toString() : null,
+        createdAt: task.createdAt ? task.createdAt.toISOString() : new Date().toISOString(),
+        updatedAt: task.updatedAt ? task.updatedAt.toISOString() : new Date().toISOString()
+      }
+    }
+    
+    await index.upsert([vector])
+    console.log(`Task ${task._id} updated in Pinecone successfully`)
+  } catch (error) {
+    console.error('Error updating task in Pinecone:', error)
+    // Don't throw here to avoid breaking the main operation
+  }
+}
+
+// Delete task from Pinecone
+async function deleteTaskFromPinecone(taskId) {
+  try {
+    await index.deleteOne(taskId.toString())
+    console.log(`Task ${taskId} deleted from Pinecone successfully`)
+  } catch (error) {
+    console.error('Error deleting task from Pinecone:', error)
+    // Don't throw here to avoid breaking the main operation
+  }
+}
 
 export async function GET(req, { params }) {
   try {
@@ -78,6 +174,7 @@ export async function PUT(req, { params }) {
       }
     })
 
+    // Update task in MongoDB
     const task = await Task.findOneAndUpdate(
       { _id: taskId, userId: decoded.userId },
       { $set: allowedUpdates },
@@ -87,6 +184,11 @@ export async function PUT(req, { params }) {
     if (!task) {
       return NextResponse.json({ message: "Task not found" }, { status: 404 })
     }
+
+    // Update task in Pinecone (async, don't wait for it)
+    upsertTaskToPinecone(task).catch(error => {
+      console.error('Failed to update task in Pinecone:', error)
+    })
 
     return NextResponse.json({ task }, { status: 200 })
   } catch (error) {
@@ -131,7 +233,7 @@ export async function DELETE(req, { params }) {
       return NextResponse.json({ message: "Task not found" }, { status: 404 })
     }
 
-    // Delete the task
+    // Delete the task from MongoDB
     await Task.findOneAndDelete({ 
       _id: taskId, 
       userId: decoded.userId 
@@ -143,6 +245,11 @@ export async function DELETE(req, { params }) {
         $inc: { taskCount: -1 },
       })
     }
+
+    // Delete task from Pinecone (async, don't wait for it)
+    deleteTaskFromPinecone(taskId).catch(error => {
+      console.error('Failed to delete task from Pinecone:', error)
+    })
 
     return NextResponse.json(
       { message: "Task deleted successfully" },
