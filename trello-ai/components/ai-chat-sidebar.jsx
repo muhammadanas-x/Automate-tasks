@@ -133,34 +133,63 @@ export function AiChatSidebar({ projectId }) {
       }
 
       const data = await response.json()
+      console.log(data)
 
       // Add any tasks returned by AI
       if (data.tasks && data.tasks.length > 0) {
             console.log('AI returned tasks:', data.tasks);
 
-            // Send the whole array to our /api/tasks endpoint
-            try {
-                await fetch('/api/tasks', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data.tasks),   // expects [{...}, {...}]
-                });
-            } catch (storeErr) {
-                console.error('Failed to store AI tasks:', storeErr);
+            if(!data.foundTask)
+            {
+                // Send the whole array to our /api/tasks endpoint
+              try {
+                  await fetch('/api/tasks', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(data.tasks),   // expects [{...}, {...}]
+                  });
+              } catch (storeErr) {
+                  console.error('Failed to store AI tasks:', storeErr);
+              }
+
+              // …then create them in local state (or skip if you prefer to re-read from DB)
+              data.tasks.forEach(task =>
+                  createTask({ ...task, projectId })
+              );
+                const aiMessage = {
+                  id: (Date.now() + 1).toString(),
+                  content: data.message || "I'm here to help with your project management needs!",
+                  sender: "ai",
+                  timestamp: new Date(), 
+
+                }
+
+                setMessages((prev) => [...prev, aiMessage])
+
+
             }
 
-            // …then create them in local state (or skip if you prefer to re-read from DB)
-            data.tasks.forEach(task =>
-                createTask({ ...task, projectId })
-            );
+            if(data.foundTask)
+            {
+               const aiMessage = {
+                  id: (Date.now() + 1).toString(),
+                  content: data.message || "I'm here to help with your project management needs!",
+                  sender: "ai",
+                  timestamp: new Date(),
+                  tasks: data.tasks   // <- include the raw array
+
+                }
+
+
+               setMessages((prev) => [...prev, aiMessage])
+
             }
-      const aiMessage = {
-        id: (Date.now() + 1).toString(),
-        content: data.message || "I'm here to help with your project management needs!",
-        sender: "ai",
-        timestamp: new Date(),
+          
       }
-      setMessages((prev) => [...prev, aiMessage])
+
+
+
+
     } catch (error) {
       console.error("AI Chat Error:", error)
       const errorMessage = {
@@ -256,6 +285,16 @@ export function AiChatSidebar({ projectId }) {
                     }`}
                   >
                     <p>{message.content}</p>
+
+
+                     {/* task list (only if AI and tasks exist) */}
+                      {message.sender === "ai" && message.tasks?.length > 0 && (
+                        <ul className="mt-2 space-y-1 text-xs list-disc list-inside">
+                          {message.tasks.map((task) => (
+                            <li key={task.id}>{task.title} </li>
+                          ))}
+                        </ul>
+      )}
                     <p className={`text-xs mt-1 ${message.sender === "user" ? "text-blue-100" : "text-gray-500"}`}>
                       {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                     </p>

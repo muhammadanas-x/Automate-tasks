@@ -25,7 +25,7 @@ function isQueryingExistingTasks(message) {
   const queryKeywords = [
     'show', 'find', 'search', 'get', 'what', 'which', 'where', 'when',
     'status of', 'progress', 'update on', 'assigned to', 'who is',
-    'how many', 'list', 'display', 'tell me about', 'info about',"show","taskStatus"
+    'how many', 'list', 'display', 'tell me about', 'info about',"show","taskStatus","is"
   ]
   
   const messageLower = message.toLowerCase()
@@ -81,7 +81,12 @@ export async function POST(request) {
         Task Data: ${JSON.stringify(ragResult)}
         
         Current project context: ${projectContext}
-        
+        Rules:
+        1. Always respond ONLY with valid JSON. 
+        2. Do not include commentary, markdown, or extra text outside of the JSON. 
+        3. Do not include markdown formatting. 
+
+
         Please provide a helpful response about this task information. 
         Always respond ONLY with valid JSON in this format:
         {
@@ -89,8 +94,7 @@ export async function POST(request) {
           "tasks": [task objects if you want to display them, otherwise empty array],
           "foundTask": true
         }
-        
-        Do not include commentary, markdown, or extra text outside of the JSON.`
+        `
 
       const ragResponse = await ai.models.generateContent({
         model: "models/gemini-2.5-flash",

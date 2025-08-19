@@ -535,7 +535,7 @@ export function KanbanBoard({ projectId }) {
             <div>
               <Label className="text-sm font-medium">Task Status (Please update on this field) </Label>
               <Textarea
-                value={"Update on this field"}
+                value={selectedTask.taskStatus}
                 onChange={(e) =>
                   setSelectedTask({ ...selectedTask, taskStatus: e.target.value })
                 }
