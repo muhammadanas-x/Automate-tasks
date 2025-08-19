@@ -2,9 +2,12 @@ import { ProjectSidebar } from "./project-sidebar"
 import { KanbanBoard } from "./kanban-board"
 import { AiChatSidebar } from "./ai-chat-sidebar"
 import { ProjectProvider } from "@/contexts/project-context"
+import ProtectedRoute from "./ProtectedRoute"
 
 export function ProjectLayout({ projectId }) {
   return (
+  <ProtectedRoute>
+
     <ProjectProvider>
       <div className="flex h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 relative overflow-hidden">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -29,5 +32,6 @@ export function ProjectLayout({ projectId }) {
         </div>
       </div>
     </ProjectProvider>
+    </ProtectedRoute>
   )
 }
