@@ -18,18 +18,21 @@ export function ProjectLayout({ projectId }) {
 
         {/* Left Sidebar - Projects */}
         <div className="relative z-10 w-60 backdrop-blur-sm bg-white/80 border-r border-white/20 shadow-lg">
-          <ProjectSidebar currentProjectId={projectId} />
+          <ProjectSidebar currentProjectId={projectId || ""} />
         </div>
 
         {/* Main Content - Kanban Board */}
         <div className="relative z-10 flex-1 flex flex-col">
-          <KanbanBoard projectId={projectId} />
+          <KanbanBoard projectId={projectId || ""} />
         </div>
 
         {/* Right Sidebar - AI Chat */}
         <div className="relative z-10 w-80 backdrop-blur-sm bg-white/80 border-l border-white/20 shadow-lg">
-          <AiChatSidebar projectId={projectId} />
+          <AiChatSidebar projectId={projectId || ""} />
         </div>
+
+
+
       </div>
     </ProjectProvider>
     </ProtectedRoute>

@@ -69,14 +69,14 @@ async function upsertTaskToPinecone(task) {
       id: task._id.toString(),
       values: embedding,
       metadata: {
-        userId: task.userId.toString(),
+        userId: task.userId ? task.userId.toString() : '',
         title: task.title || '',
         description: task.description || '',
         category: task.category || '',
         priority: task.priority || '',
         status: task.status || '',
         taskStatus: task.taskStatus || '',
-        assignee: task.assignee || '',
+        assignee: task.assignee ? task.assignee.toString() : '',
         projectId: task.projectId ? task.projectId.toString() : null,
         createdAt: task.createdAt ? task.createdAt.toISOString() : new Date().toISOString(),
         updatedAt: task.updatedAt ? task.updatedAt.toISOString() : new Date().toISOString()
@@ -102,6 +102,54 @@ async function deleteTaskFromPinecone(taskId) {
   }
 }
 
+// Helper function to check if user has access to a task
+async function checkTaskAccess(taskId, userId, requiredRole = 'viewer') {
+  const task = await Task.findById(taskId).populate('assignee', 'name email')
+  
+  if (!task) {
+    return { hasAccess: false, task: null, userRole: null }
+  }
+
+  // Check if it's a legacy task (user owns it directly)
+  if (task.userId && task.userId.toString() === userId) {
+    return { hasAccess: true, task, userRole: 'owner' }
+  }
+
+  // Check project-based access
+  if (task.projectId) {
+    const project = await Project.findOne({
+      _id: task.projectId,
+      $or: [
+        { userId: userId }, // Legacy support
+        { 'members.user': userId }, // New structure
+      ]
+    })
+
+    if (!project) {
+      return { hasAccess: false, task, userRole: null }
+    }
+
+    // Find user's role in the project
+    const member = project.members.find(m => 
+      m.user && m.user.toString() === userId
+    )
+    
+    const userRole = member ? member.role : 'owner' // fallback for legacy projects
+
+    // Check if user has required role
+    const roleHierarchy = { viewer: 1, editor: 2, owner: 3 }
+    const hasRequiredRole = roleHierarchy[userRole] >= roleHierarchy[requiredRole]
+    
+    if (!hasRequiredRole) {
+      return { hasAccess: false, task, userRole, insufficientRole: true }
+    }
+
+    return { hasAccess: true, task, userRole }
+  }
+
+  return { hasAccess: false, task, userRole: null }
+}
+
 export async function GET(req, { params }) {
   try {
     const token = req.cookies.get("token")?.value
@@ -119,12 +167,9 @@ export async function GET(req, { params }) {
       return NextResponse.json({ message: "Invalid task ID" }, { status: 400 })
     }
 
-    const task = await Task.findOne({ 
-      _id: taskId, 
-      userId: decoded.userId 
-    })
+    const { hasAccess, task } = await checkTaskAccess(taskId, decoded.userId, 'viewer')
 
-    if (!task) {
+    if (!hasAccess) {
       return NextResponse.json({ message: "Task not found" }, { status: 404 })
     }
 
@@ -156,6 +201,22 @@ export async function PUT(req, { params }) {
       return NextResponse.json({ message: "Invalid task ID" }, { status: 400 })
     }
 
+    // Check if user has editor access to the task
+    const { hasAccess, task, insufficientRole } = await checkTaskAccess(
+      taskId, 
+      decoded.userId, 
+      'editor'
+    )
+
+    if (!hasAccess) {
+      if (insufficientRole) {
+        return NextResponse.json({ 
+          message: "Insufficient permissions. Editor or Owner role required." 
+        }, { status: 403 })
+      }
+      return NextResponse.json({ message: "Task not found" }, { status: 404 })
+    }
+
     // Remove fields that shouldn't be updated directly
     const allowedUpdates = {
       title: updates.title,
@@ -175,22 +236,22 @@ export async function PUT(req, { params }) {
     })
 
     // Update task in MongoDB
-    const task = await Task.findOneAndUpdate(
-      { _id: taskId, userId: decoded.userId },
+    const updatedTask = await Task.findByIdAndUpdate(
+      taskId,
       { $set: allowedUpdates },
       { new: true, runValidators: true }
-    )
+    ).populate('assignee', 'name email')
 
-    if (!task) {
+    if (!updatedTask) {
       return NextResponse.json({ message: "Task not found" }, { status: 404 })
     }
 
     // Update task in Pinecone (async, don't wait for it)
-    upsertTaskToPinecone(task).catch(error => {
+    upsertTaskToPinecone(updatedTask).catch(error => {
       console.error('Failed to update task in Pinecone:', error)
     })
 
-    return NextResponse.json({ task }, { status: 200 })
+    return NextResponse.json({ task: updatedTask }, { status: 200 })
   } catch (error) {
     console.error("Task PUT error:", error)
     if (error.name === 'ValidationError') {
@@ -223,21 +284,24 @@ export async function DELETE(req, { params }) {
       return NextResponse.json({ message: "Invalid task ID" }, { status: 400 })
     }
 
-    // First find the task to get the projectId before deleting
-    const task = await Task.findOne({ 
-      _id: taskId, 
-      userId: decoded.userId 
-    })
+    // Check if user has editor access to delete the task
+    const { hasAccess, task, insufficientRole } = await checkTaskAccess(
+      taskId, 
+      decoded.userId, 
+      'editor'
+    )
 
-    if (!task) {
+    if (!hasAccess) {
+      if (insufficientRole) {
+        return NextResponse.json({ 
+          message: "Insufficient permissions. Editor or Owner role required to delete tasks." 
+        }, { status: 403 })
+      }
       return NextResponse.json({ message: "Task not found" }, { status: 404 })
     }
 
     // Delete the task from MongoDB
-    await Task.findOneAndDelete({ 
-      _id: taskId, 
-      userId: decoded.userId 
-    })
+    await Task.findByIdAndDelete(taskId)
 
     // Update project task count
     if (task.projectId) {

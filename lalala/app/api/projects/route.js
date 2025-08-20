@@ -14,7 +14,17 @@ export async function GET(req) {
     const decoded = jwt.verify(token, process.env.JWT_SECRET)
     await dbConnect()
 
-    const projects = await Project.find({ userId: decoded.userId })
+    // Find projects where user is a member (either by userId or in members array)
+    const projects = await Project.find({
+      $or: [
+        { userId: decoded.userId }, // Legacy support - if you still have old projects
+        { 'members.user': decoded.userId }, // New multi-user structure
+        { 'members.email': decoded.email } // For invited users who haven't been linked yet
+      ]
+    })
+    .populate('members.user', 'name email')
+    .sort({ createdAt: -1 })
+
     return NextResponse.json({ projects }, { status: 200 })
   } catch (error) {
     console.error("Projects API error:", error)
@@ -33,12 +43,28 @@ export async function POST(req) {
     await dbConnect()
 
     const body = await req.json()
+    
+    // Create project with the creator as the first member with 'owner' role
     const projectData = {
-      ...body,
-      userId: decoded.userId,
+      name: body.name,
+      description: body.description,
+      members: [
+        {
+          user: decoded.userId,
+          role: 'owner',
+          email: decoded.email // assuming email is in the JWT
+        }
+      ],
+      taskCount: 0,
+      // Keep userId for backward compatibility if needed
+      userId: decoded.userId
     }
 
     const project = await Project.create(projectData)
+    
+    // Populate the member data before returning
+    await project.populate('members.user', 'name email')
+    
     return NextResponse.json({ project }, { status: 201 })
   } catch (error) {
     console.error("Projects API error:", error)

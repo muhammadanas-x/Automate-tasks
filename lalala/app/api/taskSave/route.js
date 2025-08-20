@@ -68,14 +68,14 @@ async function upsertTaskToPinecone(task) {
       id: task._id.toString(),
       values: embedding,
       metadata: {
-        userId: task.userId.toString(),
+        userId: task.userId ? task.userId.toString() : '', // Handle cases where userId might not exist
         title: task.title || '',
         description: task.description || '',
         category: task.category || '',
         priority: task.priority || '',
         status: task.status || '',
         taskStatus: task.taskStatus || '',
-        assignee: task.assignee || '',
+        assignee: task.assignee ? task.assignee.toString() : '',
         projectId: task.projectId ? task.projectId.toString() : null,
         createdAt: task.createdAt ? task.createdAt.toISOString() : new Date().toISOString(),
         updatedAt: task.updatedAt ? task.updatedAt.toISOString() : new Date().toISOString()
@@ -101,6 +101,16 @@ async function deleteTaskFromPinecone(taskId) {
   }
 }
 
+// Helper function to get user's accessible projects
+async function getUserAccessibleProjects(userId) {
+  return await Project.find({
+    $or: [
+      { userId: userId }, // Legacy support
+      { 'members.user': userId }, // New structure
+    ]
+  }).select('_id')
+}
+
 export async function GET(req) {
   try {
     const token = req.cookies.get("token")?.value
@@ -111,7 +121,18 @@ export async function GET(req) {
     const decoded = jwt.verify(token, process.env.JWT_SECRET)
     await dbConnect()
 
-    const tasks = await Task.find({ userId: decoded.userId })
+    // Get all projects user has access to
+    const accessibleProjects = await getUserAccessibleProjects(decoded.userId)
+    const projectIds = accessibleProjects.map(p => p._id)
+
+    // Get tasks from projects user has access to, plus legacy tasks
+    const tasks = await Task.find({
+      $or: [
+        { userId: decoded.userId }, // Legacy tasks
+        { projectId: { $in: projectIds } } // Tasks from accessible projects
+      ]
+    }).populate('assignee', 'name email')
+
     return NextResponse.json({ tasks }, { status: 200 })
   } catch (error) {
     console.error("Tasks API error:", error)
@@ -133,9 +154,41 @@ export async function POST(req) {
     await dbConnect()
 
     const body = await req.json()
+
+    // Verify user has access to the project (if projectId is provided)
+    if (body.projectId) {
+      const project = await Project.findOne({
+        _id: body.projectId,
+        $or: [
+          { userId: decoded.userId }, // Legacy support
+          { 'members.user': decoded.userId }, // New structure - user must be a member
+        ]
+      })
+
+      if (!project) {
+        return NextResponse.json(
+          { message: "Project not found or access denied" },
+          { status: 404 }
+        )
+      }
+
+      // Check if user has at least editor permission
+      const member = project.members.find(m => 
+        m.user && m.user.toString() === decoded.userId
+      )
+      
+      const userRole = member ? member.role : 'owner' // fallback for legacy projects
+      
+      if (!['owner', 'editor'].includes(userRole)) {
+        return NextResponse.json({
+          message: "Insufficient permissions. Editor or Owner role required to create tasks."
+        }, { status: 403 })
+      }
+    }
+
     const taskData = {
       ...body,
-      userId: decoded.userId,
+      userId: decoded.userId, // Keep for backward compatibility
     }
 
     // Create task in MongoDB
@@ -147,6 +200,9 @@ export async function POST(req) {
         $inc: { taskCount: 1 },
       })
     }
+
+    // Populate assignee data
+    await task.populate('assignee', 'name email')
 
     // Store task in Pinecone (async, don't wait for it)
     upsertTaskToPinecone(task).catch(error => {

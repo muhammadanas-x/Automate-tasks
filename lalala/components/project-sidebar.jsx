@@ -1,23 +1,37 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Plus, Home, BarChart3, Settings, MoreHorizontal, LogOut } from "lucide-react"
+import { Plus, Home, BarChart3, Settings, MoreHorizontal, LogOut, Users, Mail, UserPlus } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useProject } from "@/contexts/project-context" // Updated import path
-import { useAuth } from "@/hooks/useAuth" // Add auth hook
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Badge } from "@/components/ui/badge"
+import { useProject } from "@/contexts/project-context"
+import { useAuth } from "@/hooks/useAuth"
 
 export function ProjectSidebar({ currentProjectId }) {
   const { projects, createProject, deleteProject, loading } = useProject()
-  const { user, logout } = useAuth() // Add auth context
+  const { user, logout } = useAuth()
+  
+  // New project state
   const [isNewProjectOpen, setIsNewProjectOpen] = useState(false)
   const [newProjectName, setNewProjectName] = useState("")
   const [newProjectDescription, setNewProjectDescription] = useState("")
-  const [isCreating, setIsCreating] = useState(false) // Loading state for creating project
+  const [isCreating, setIsCreating] = useState(false)
+
+  // Add people state
+  const [isAddPeopleOpen, setIsAddPeopleOpen] = useState(false)
+  const [memberEmail, setMemberEmail] = useState("")
+  const [memberRole, setMemberRole] = useState("editor")
+  const [isAddingMember, setIsAddingMember] = useState(false)
+  const [addMemberError, setAddMemberError] = useState("")
+
+  // Get current project for adding members
+  const currentProject = projects?.find(p => p._id === currentProjectId)
 
   const handleCreateProject = async () => {
     if (!newProjectName.trim()) return
@@ -29,13 +43,11 @@ export function ProjectSidebar({ currentProjectId }) {
         description: newProjectDescription.trim() || "New project description",
       })
 
-      // Reset form and close dialog
       setNewProjectName("")
       setNewProjectDescription("")
       setIsNewProjectOpen(false)
     } catch (error) {
       console.error('Error creating project:', error)
-      // You might want to show an error toast here
     } finally {
       setIsCreating(false)
     }
@@ -47,8 +59,46 @@ export function ProjectSidebar({ currentProjectId }) {
         await deleteProject(projectId)
       } catch (error) {
         console.error('Error deleting project:', error)
-        // You might want to show an error toast here
       }
+    }
+  }
+
+  const handleAddMember = async () => {
+    if (!memberEmail.trim() || !currentProjectId) return
+
+    setIsAddingMember(true)
+    setAddMemberError("")
+
+    try {
+      const response = await fetch(`/api/projects/${currentProjectId}/members`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: memberEmail.toLowerCase().trim(),
+          role: memberRole,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to add member')
+      }
+
+      // Reset form
+      setMemberEmail("")
+      setMemberRole("editor")
+      setIsAddPeopleOpen(false)
+      
+      // You might want to refresh the project data here
+      // or update the project context with the new member
+      
+    } catch (error) {
+      setAddMemberError(error.message)
+    } finally {
+      setIsAddingMember(false)
     }
   }
 
@@ -73,7 +123,6 @@ export function ProjectSidebar({ currentProjectId }) {
             <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider">PROJECTS</h3>
           </div>
           <div className="space-y-2">
-            {/* Loading skeleton */}
             {[1, 2, 3].map((i) => (
               <div key={i} className="animate-pulse">
                 <div className="flex items-center gap-3 p-3 rounded-xl">
@@ -150,7 +199,18 @@ export function ProjectSidebar({ currentProjectId }) {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="truncate font-medium text-gray-900">{project.name}</div>
-                    <div className="text-xs text-gray-500">{project.taskCount || 0} tasks</div>
+                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <span>{project.taskCount || 0} tasks</span>
+                      {project.members && project.members.length > 0 && (
+                        <>
+                          <span>•</span>
+                          <div className="flex items-center gap-1">
+                            <Users className="w-3 h-3" />
+                            <span>{project.members.length}</span>
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
               </Link>
@@ -262,13 +322,151 @@ export function ProjectSidebar({ currentProjectId }) {
           <Home className="w-4 h-4" />
           Home
         </Button>
-        <Button
-          variant="ghost"
-          className="w-full justify-start gap-3 text-gray-600 hover:text-gray-900 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 rounded-xl p-3 transition-all duration-300"
-        >
-          <BarChart3 className="w-4 h-4" />
-          Boards
-        </Button>
+        
+        {/* Add People Dialog */}
+        <Dialog open={isAddPeopleOpen} onOpenChange={setIsAddPeopleOpen}>
+          <DialogTrigger asChild>
+            <Button
+              variant="ghost"
+              className="w-full justify-start gap-3 text-gray-600 hover:text-gray-900 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 rounded-xl p-3 transition-all duration-300"
+              disabled={!currentProjectId}
+            >
+              <UserPlus className="w-4 h-4" />
+              Add People
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="backdrop-blur-sm bg-white/95 border-white/20 max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+                <UserPlus className="w-5 h-5 text-blue-600" />
+                Add People to Project
+              </DialogTitle>
+              {currentProject && (
+                <p className="text-sm text-gray-600">
+                  Adding to: <span className="font-medium">{currentProject.name}</span>
+                </p>
+              )}
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="member-email" className="text-gray-700 flex items-center gap-2">
+                  <Mail className="w-4 h-4" />
+                  Email Address
+                </Label>
+                <Input
+                  id="member-email"
+                  type="email"
+                  value={memberEmail}
+                  onChange={(e) => setMemberEmail(e.target.value)}
+                  placeholder="Enter email address..."
+                  className="bg-white/50 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20"
+                  disabled={isAddingMember}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="member-role" className="text-gray-700">
+                  Role
+                </Label>
+                <Select value={memberRole} onValueChange={setMemberRole} disabled={isAddingMember}>
+                  <SelectTrigger className="bg-white/50 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="viewer">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className="bg-green-100 text-green-800 text-xs">
+                          Viewer
+                        </Badge>
+                        <span className="text-sm">Can view project and tasks</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="editor">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">
+                          Editor
+                        </Badge>
+                        <span className="text-sm">Can edit tasks and project</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="owner">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className="bg-purple-100 text-purple-800 text-xs">
+                          Owner
+                        </Badge>
+                        <span className="text-sm">Full access including member management</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Current Members */}
+              {currentProject?.members && currentProject.members.length > 0 && (
+                <div>
+                  <Label className="text-gray-700 text-sm">Current Members ({currentProject.members.length})</Label>
+                  <div className="mt-2 space-y-2 max-h-32 overflow-y-auto">
+                    {currentProject.members.map((member, index) => (
+                      <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded-lg text-sm">
+                        <div>
+                          <p className="font-medium text-gray-900">
+                            {member.user?.name || member.email}
+                          </p>
+                          {member.user?.name && (
+                            <p className="text-xs text-gray-600">{member.email}</p>
+                          )}
+                        </div>
+                        <Badge 
+                          variant="secondary" 
+                          className={`text-xs ${
+                            member.role === 'owner' 
+                              ? 'bg-purple-100 text-purple-800'
+                              : member.role === 'editor'
+                              ? 'bg-blue-100 text-blue-800'
+                              : 'bg-green-100 text-green-800'
+                          }`}
+                        >
+                          {member.role}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {addMemberError && (
+                <div className="text-red-600 text-sm bg-red-50 p-3 rounded-lg border border-red-200">
+                  {addMemberError}
+                </div>
+              )}
+
+              <div className="flex justify-end gap-2 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIsAddPeopleOpen(false)
+                    setMemberEmail("")
+                    setMemberRole("editor")
+                    setAddMemberError("")
+                  }}
+                  className="border-gray-200 hover:bg-gray-50"
+                  disabled={isAddingMember}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleAddMember}
+                  disabled={!memberEmail.trim() || isAddingMember}
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50"
+                >
+                  {isAddingMember ? 'Adding...' : 'Add Member'}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
         <Button
           variant="ghost"
           className="w-full justify-start gap-3 text-gray-600 hover:text-gray-900 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 rounded-xl p-3 transition-all duration-300"

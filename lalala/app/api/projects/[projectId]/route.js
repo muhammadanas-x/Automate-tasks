@@ -1,9 +1,44 @@
+// app/api/projects/[projectId]/route.js
 import { NextResponse } from "next/server"
 import dbConnect from "@/lib/mongodb"
 import Project from "@/models/Project"
 import Task from "@/models/Task"
 import jwt from "jsonwebtoken"
 import mongoose from "mongoose"
+
+// Helper function to check if user has access to project
+async function checkProjectAccess(projectId, userId, requiredRole = null) {
+  const project = await Project.findOne({
+    _id: projectId,
+    $or: [
+      { userId: userId }, // Legacy support
+      { 'members.user': userId }, // New structure
+    ]
+  }).populate('members.user', 'name email')
+
+  if (!project) {
+    return { hasAccess: false, project: null, userRole: null }
+  }
+
+  // Find user's role in the project
+  const member = project.members.find(m => 
+    m.user && m.user._id.toString() === userId
+  )
+  
+  const userRole = member ? member.role : 'owner' // fallback for legacy projects
+
+  // Check if user has required role
+  if (requiredRole) {
+    const roleHierarchy = { viewer: 1, editor: 2, owner: 3 }
+    const hasRequiredRole = roleHierarchy[userRole] >= roleHierarchy[requiredRole]
+    
+    if (!hasRequiredRole) {
+      return { hasAccess: false, project, userRole, insufficientRole: true }
+    }
+  }
+
+  return { hasAccess: true, project, userRole }
+}
 
 export async function GET(req, { params }) {
   try {
@@ -22,12 +57,9 @@ export async function GET(req, { params }) {
       return NextResponse.json({ message: "Invalid project ID" }, { status: 400 })
     }
 
-    const project = await Project.findOne({ 
-      _id: projectId, 
-      userId: decoded.userId 
-    })
+    const { hasAccess, project } = await checkProjectAccess(projectId, decoded.userId)
 
-    if (!project) {
+    if (!hasAccess) {
       return NextResponse.json({ message: "Project not found" }, { status: 404 })
     }
 
@@ -59,6 +91,22 @@ export async function PUT(req, { params }) {
       return NextResponse.json({ message: "Invalid project ID" }, { status: 400 })
     }
 
+    // Check if user has editor or owner access
+    const { hasAccess, project, insufficientRole } = await checkProjectAccess(
+      projectId, 
+      decoded.userId, 
+      'editor'
+    )
+
+    if (!hasAccess) {
+      if (insufficientRole) {
+        return NextResponse.json({ 
+          message: "Insufficient permissions. Editor or Owner role required." 
+        }, { status: 403 })
+      }
+      return NextResponse.json({ message: "Project not found" }, { status: 404 })
+    }
+
     // Remove fields that shouldn't be updated directly
     const allowedUpdates = {
       name: updates.name,
@@ -72,17 +120,13 @@ export async function PUT(req, { params }) {
       }
     })
 
-    const project = await Project.findOneAndUpdate(
-      { _id: projectId, userId: decoded.userId },
+    const updatedProject = await Project.findOneAndUpdate(
+      { _id: projectId },
       { $set: allowedUpdates },
       { new: true, runValidators: true }
-    )
+    ).populate('members.user', 'name email')
 
-    if (!project) {
-      return NextResponse.json({ message: "Project not found" }, { status: 404 })
-    }
-
-    return NextResponse.json({ project }, { status: 200 })
+    return NextResponse.json({ project: updatedProject }, { status: 200 })
   } catch (error) {
     console.error("Project PUT error:", error)
     if (error.name === 'ValidationError') {
@@ -115,27 +159,27 @@ export async function DELETE(req, { params }) {
       return NextResponse.json({ message: "Invalid project ID" }, { status: 400 })
     }
 
-    // Check if project exists and belongs to user
-    const project = await Project.findOne({ 
-      _id: projectId, 
-      userId: decoded.userId 
-    })
+    // Check if user has owner access (only owners can delete projects)
+    const { hasAccess, project, insufficientRole } = await checkProjectAccess(
+      projectId, 
+      decoded.userId, 
+      'owner'
+    )
 
-    if (!project) {
+    if (!hasAccess) {
+      if (insufficientRole) {
+        return NextResponse.json({ 
+          message: "Only project owners can delete projects" 
+        }, { status: 403 })
+      }
       return NextResponse.json({ message: "Project not found" }, { status: 404 })
     }
 
     // Delete all tasks associated with this project
-    await Task.deleteMany({ 
-      projectId: projectId, 
-      userId: decoded.userId 
-    })
+    await Task.deleteMany({ projectId: projectId })
 
     // Delete the project
-    await Project.findOneAndDelete({ 
-      _id: projectId, 
-      userId: decoded.userId 
-    })
+    await Project.findOneAndDelete({ _id: projectId })
 
     return NextResponse.json(
       { message: "Project and associated tasks deleted successfully" },

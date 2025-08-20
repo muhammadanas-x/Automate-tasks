@@ -95,10 +95,11 @@ export function KanbanBoard({ projectId }) {
       task.assignee.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
+
   const tasksByStatus = {
     todo: filteredTasks.filter((task) => task.status === "todo"),
-    inProgress: filteredTasks.filter((task) => task.status === "inProgress"),
-    done: filteredTasks.filter((task) => task.status === "done"),
+    inProgress: filteredTasks.filter((task) => task.status === "in-progress"),
+    done: filteredTasks.filter((task) => task.status === "completed"),
   }
 
   const handleCreateTask = () => {
@@ -118,6 +119,7 @@ export function KanbanBoard({ projectId }) {
   }
 
   const handleTaskStatusChange = (taskId, newStatus) => {
+    
     updateTask(taskId, { status: newStatus })
   }
 
@@ -192,14 +194,14 @@ export function KanbanBoard({ projectId }) {
               {tasksByStatus.todo.map((task) => (
                 <Card
                   onClick={() => handleCardClick(task)}
-                  key={task.id}
+                  key={task._id}
                   className="cursor-pointer hover:shadow-lg transition-all duration-300 group backdrop-blur-sm bg-white/80 border-white/20 hover:bg-white/90"
                 >
                    
 
                   <CardHeader className="pb-2">
                     <div className="flex items-center justify-between">
-                      <div className="text-xs text-gray-500 mb-1">{task.id}</div>
+                      <div className="text-xs text-gray-500 mb-1">{task._id}</div>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button
@@ -211,13 +213,13 @@ export function KanbanBoard({ projectId }) {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="backdrop-blur-sm bg-white/95 border-white/20">
-                          <DropdownMenuItem onClick={() => handleTaskStatusChange(task.id, "inProgress")}>
+                          <DropdownMenuItem onClick={() => handleTaskStatusChange(task._id, "in-progress")}>
                             Move to In Progress
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleTaskStatusChange(task.id, "done")}>
+                          <DropdownMenuItem onClick={() => handleTaskStatusChange(task._id, "completed")}>
                             Move to Done
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteTask(task.id)}>
+                          <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteTask(task._id)}>
                             Delete Task
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -277,12 +279,12 @@ export function KanbanBoard({ projectId }) {
             <div className="space-y-3 flex-1 overflow-y-auto pr-2">
               {tasksByStatus.inProgress.map((task) => (
                 <Card
-                  key={task.id}
+                  key={task._id}
                   className="cursor-pointer hover:shadow-lg transition-all duration-300 group backdrop-blur-sm bg-white/80 border-white/20 hover:bg-white/90"
                 >
                   <CardHeader className="pb-2">
                     <div className="flex items-center justify-between">
-                      <div className="text-xs text-gray-500 mb-1">{task.id}</div>
+                      <div className="text-xs text-gray-500 mb-1">{task._id}</div>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button
@@ -294,13 +296,13 @@ export function KanbanBoard({ projectId }) {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="backdrop-blur-sm bg-white/95 border-white/20">
-                          <DropdownMenuItem onClick={() => handleTaskStatusChange(task.id, "todo")}>
+                          <DropdownMenuItem onClick={() => handleTaskStatusChange(task._id, "todo")}>
                             Move to To Do
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleTaskStatusChange(task.id, "done")}>
+                          <DropdownMenuItem onClick={() => handleTaskStatusChange(task._id, "done")}>
                             Move to Done
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteTask(task.id)}>
+                          <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteTask(task._id)}>
                             Delete Task
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -360,12 +362,12 @@ export function KanbanBoard({ projectId }) {
             <div className="space-y-3 flex-1 overflow-y-auto pr-2">
               {tasksByStatus.done.map((task) => (
                 <Card
-                  key={task.id}
+                  key={task._id}
                   className="cursor-pointer hover:shadow-lg transition-all duration-300 group opacity-75 backdrop-blur-sm bg-white/60 border-white/20 hover:bg-white/80"
                 >
                   <CardHeader className="pb-2">
                     <div className="flex items-center justify-between">
-                      <div className="text-xs text-gray-500 mb-1">{task.id}</div>
+                      <div className="text-xs text-gray-500 mb-1">{task._id}</div>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button
@@ -377,13 +379,13 @@ export function KanbanBoard({ projectId }) {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="backdrop-blur-sm bg-white/95 border-white/20">
-                          <DropdownMenuItem onClick={() => handleTaskStatusChange(task.id, "todo")}>
+                          <DropdownMenuItem onClick={() => handleTaskStatusChange(task._id, "todo")}>
                             Move to To Do
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleTaskStatusChange(task.id, "inProgress")}>
+                          <DropdownMenuItem onClick={() => handleTaskStatusChange(task._id, "inProgress")}>
                             Move to In Progress
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteTask(task.id)}>
+                          <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteTask(task._id)}>
                             Delete Task
                           </DropdownMenuItem>
                         </DropdownMenuContent>

@@ -83,6 +83,7 @@ export function ProjectProvider({ children }) {
   }
 
   const createTask = async (taskData) => {
+
     try {
       const response = await fetch('/api/taskSave', {
         method: 'POST',
@@ -133,7 +134,7 @@ export function ProjectProvider({ children }) {
 
   const deleteTask = async (taskId) => {
     try {
-      const response = await fetch(`/api/tasks/${taskId}`, {
+      const response = await fetch(`/api/taskSave/${taskId}`, {
         method: 'DELETE',
       })
 

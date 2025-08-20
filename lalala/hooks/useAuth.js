@@ -44,7 +44,7 @@ export function AuthProvider({ children }) {
 
       if (response.ok) {
         setUser(data.user)
-        router.push('/dashboard')
+        router.push('/projects')
         return { success: true }
       } else {
         return { success: false, message: data.message }

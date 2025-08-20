@@ -69,3 +69,50 @@ export async function POST(req) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
+
+export async function DELETE(req) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const deleteAll = searchParams.get('deleteAll') === 'true';
+    
+    if (deleteAll) {
+      // Delete all vectors in the index
+      await index.deleteAll();
+      
+      return NextResponse.json({ 
+        success: true, 
+        message: "All vectors deleted from index"
+      }, { status: 200 });
+    } else {
+      // Delete specific vectors by IDs
+      const body = await req.json();
+      const ids = Array.isArray(body) ? body : body.ids || [body.id];
+      
+      if (!ids || ids.length === 0) {
+        return NextResponse.json({ 
+          error: "No IDs provided for deletion" 
+        }, { status: 400 });
+      }
+
+      // Filter out any undefined/null IDs
+      const validIds = ids.filter(id => id != null);
+      
+      if (validIds.length === 0) {
+        return NextResponse.json({ 
+          error: "No valid IDs provided for deletion" 
+        }, { status: 400 });
+      }
+
+      await index.deleteMany(validIds);
+
+      return NextResponse.json({ 
+        success: true, 
+        deletedCount: validIds.length,
+        deletedIds: validIds
+      }, { status: 200 });
+    }
+  } catch (err) {
+    console.error('Delete error:', err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}

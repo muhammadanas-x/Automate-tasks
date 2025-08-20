@@ -17,7 +17,6 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   
   const { login } = useAuth()
-  const router = useRouter()
   const searchParams = useSearchParams()
 
   // Check for success message from signup
