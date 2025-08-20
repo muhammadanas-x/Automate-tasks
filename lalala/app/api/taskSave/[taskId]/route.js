@@ -69,7 +69,7 @@ async function upsertTaskToPinecone(task) {
       id: task._id.toString(),
       values: embedding,
       metadata: {
-        userId: task.userId ? task.userId.toString() : '',
+        projectId: task.projectId ? task.projectId.toString() : '',
         title: task.title || '',
         description: task.description || '',
         category: task.category || '',

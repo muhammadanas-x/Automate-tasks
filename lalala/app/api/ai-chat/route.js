@@ -1,3 +1,5 @@
+//api/ai-chat/route.js
+
 import { NextResponse } from "next/server"
 import { GoogleGenAI } from "@google/genai"
 
@@ -33,14 +35,15 @@ function isQueryingExistingTasks(message) {
 }
 
 // --- helper to perform RAG search with authentication ---
-async function performRAGSearch(query, request) {
+async function performRAGSearch(query, request, projectId) {
   try {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
     
     // Forward cookies from the original request
     const cookies = request.headers.get('cookie')
     
-    const response = await fetch(`${baseUrl}/api/tasks/search?query=${encodeURIComponent(query)}`, {
+    // Use the projectId in the URL path
+    const response = await fetch(`${baseUrl}/api/tasks/search/${projectId}?query=${encodeURIComponent(query)}`, {
       headers: {
         'Cookie': cookies || '',
         'Content-Type': 'application/json'
@@ -72,9 +75,18 @@ async function performRAGSearch(query, request) {
 
 export async function POST(request) {
   try {
-    const { message, projectContext } = await request.json()
+    const { message, projectContext, projectId } = await request.json()
 
-    console.log("[v0] AI Chat request received:", { message, projectContext })
+    console.log("[v0] AI Chat request received:", { message, projectContext, projectId })
+
+    // Validate projectId is provided
+    if (!projectId) {
+      return NextResponse.json({
+        message: "Project ID is required for task operations.",
+        tasks: [],
+        error: "missing_project_id"
+      }, { status: 400 })
+    }
 
     // Check if user is querying existing tasks
     const isQuerying = isQueryingExistingTasks(message)
@@ -83,8 +95,8 @@ export async function POST(request) {
       console.log("[v0] Detected query for existing tasks, performing RAG search...")
       
       try {
-        // Perform RAG search with authentication
-        const ragResult = await performRAGSearch(message, request)
+        // Perform RAG search with authentication and projectId
+        const ragResult = await performRAGSearch(message, request, projectId)
         
         if (!ragResult) {
           return NextResponse.json({

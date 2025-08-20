@@ -111,6 +111,7 @@ export function AiChatSidebar({ projectId }) {
     setInputValue("")
     setIsTyping(true)
 
+    console.log(currentProject)
     try {
       const response = await fetch("/api/ai-chat", {
         method: "POST",
@@ -120,6 +121,7 @@ export function AiChatSidebar({ projectId }) {
         body: JSON.stringify({
           message: content,
           projectContext: `${currentProject?.name || "New Project"}: Already Implemented ${projectContext.tasks} `,
+          projectId: currentProject._id
         }),
       })
 

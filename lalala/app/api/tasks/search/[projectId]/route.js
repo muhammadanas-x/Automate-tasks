@@ -34,7 +34,7 @@ export async function GET(req, { params }) {
     const decoded = jwt.verify(token, process.env.JWT_SECRET)
     
     // Get projectId from route parameters
-    const { projectId } = params
+    const { projectId } = await params
     
     if (!projectId) {
       return NextResponse.json({ error: 'Project ID parameter required' }, { status: 400 })

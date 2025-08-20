@@ -38,7 +38,8 @@ async function generateTaskEmbedding(task) {
       task.category || '',
       task.priority || '',
       task.status || '',
-      task.assignee || ''
+      task.assignee || '',
+      task.userId || "",
     ].filter(Boolean).join(' ')
     
     if (!taskText.trim()) {
@@ -64,11 +65,12 @@ async function upsertTaskToPinecone(task) {
   try {
     const embedding = await generateTaskEmbedding(task)
     
+    console.log(task.projectId)
     const vector = {
       id: task._id.toString(),
       values: embedding,
       metadata: {
-        userId: task.userId ? task.userId.toString() : '', // Handle cases where userId might not exist
+        projectId: task.projectId ? task.projectId.toString() : '', // Handle cases where userId might not exist
         title: task.title || '',
         description: task.description || '',
         category: task.category || '',
@@ -81,6 +83,8 @@ async function upsertTaskToPinecone(task) {
         updatedAt: task.updatedAt ? task.updatedAt.toISOString() : new Date().toISOString()
       }
     }
+
+    console.log(vector)
     
     await index.upsert([vector])
     console.log(`Task ${task._id} stored in Pinecone successfully`)
@@ -186,6 +190,7 @@ export async function POST(req) {
       }
     }
 
+    console.log(decoded)
     const taskData = {
       ...body,
       userId: decoded.userId, // Keep for backward compatibility
