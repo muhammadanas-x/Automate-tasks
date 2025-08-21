@@ -1,4 +1,4 @@
-// app/api/tasks/search/[projectId]/route.js
+// app/api/tasks/search/route.js
 import { NextResponse } from 'next/server'
 import { Pinecone } from '@pinecone-database/pinecone'
 import { pipeline } from '@xenova/transformers'
@@ -23,7 +23,7 @@ async function getEmbedder() {
   return embedder
 }
 
-export async function GET(req, { params }) {
+export async function GET(req) {
   try {
     // Check authentication
     const token = req.cookies.get("token")?.value
@@ -33,27 +33,21 @@ export async function GET(req, { params }) {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET)
     
-    // Get projectId from route parameters
-    const { projectId } = params
-    
-    if (!projectId) {
-      return NextResponse.json({ error: 'Project ID parameter required' }, { status: 400 })
-    }
-
     const { searchParams } = new URL(req.url)
     const query = searchParams.get('query')
     const topK = parseInt(searchParams.get('topK') || '10')
     const minScore = parseFloat(searchParams.get('minScore') || '0.7')
 
-    console.log('Search query:', query)
-    console.log('Project ID:', projectId)
-    console.log('User ID:', decoded.userId)
-    console.log('TopK:', topK)
-    console.log('MinScore:', minScore)
+    console.log(query)
+    console.log(topK)
+    console.log(minScore)
     
     if (!query) {
       return NextResponse.json({ error: 'Query parameter required' }, { status: 400 })
     }
+
+    console.log('Search query:', query)
+    console.log('User ID:', decoded.userId)
     
     // Get the 1024D embedder
     const model = await getEmbedder()
@@ -71,14 +65,15 @@ export async function GET(req, { params }) {
 
     console.log('Querying Pinecone index...')
     
-    // Search with projectId filter to only return tasks belonging to the specified project
+    console.log(decoded.userId)
+    // Search with user filter to only return tasks belonging to the authenticated user
     const searchResults = await index.query({
       vector: queryVector,
       topK: topK,
       includeMetadata: true,
       includeValues: false,
       filter: {
-        projectId: projectId
+        projectId: decoded.userId
       }
     })
 
@@ -112,7 +107,6 @@ export async function GET(req, { params }) {
     return NextResponse.json({
       success: true,
       query,
-      projectId,
       results: enhancedResults,
       count: enhancedResults.length,
       totalFound: searchResults.matches?.length || 0,
