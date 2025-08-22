@@ -27,9 +27,12 @@ export function ProjectLayout({ projectId }) {
         </div>
 
         {/* Right Sidebar - AI Chat */}
-        <div className="relative z-10 w-80 backdrop-blur-sm bg-white/80 border-l border-white/20 shadow-lg">
+        {projectId &&  <>
+         <div className="relative z-10 w-80 backdrop-blur-sm bg-white/80 border-l border-white/20 shadow-lg">
           <AiChatSidebar projectId={projectId || ""} />
         </div>
+        </>}
+       
 
 
 

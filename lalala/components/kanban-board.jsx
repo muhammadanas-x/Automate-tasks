@@ -53,7 +53,7 @@ const getPriorityColor = (priority) => {
 }
 
 export function KanbanBoard({ projectId }) {
-  const { getProjectTasks, createTask, updateTask, deleteTask, setCurrentProject } = useProject()
+  const { getProjectTasks, createTask, updateTask, deleteTask, setCurrentProject , currentProject } = useProject()
   const [searchTerm, setSearchTerm] = useState("")
   const [isNewTaskOpen, setIsNewTaskOpen] = useState(false)
   const [newTaskColumn, setNewTaskColumn] = useState("todo")
@@ -85,8 +85,8 @@ export function KanbanBoard({ projectId }) {
     setCurrentProject(projectId)
   }, [projectId, setCurrentProject])
 
-  const projectTitle = getProjectTitle(projectId)
-  const projectDescription = getProjectDescription(projectId)
+  const projectTitle = "Project"
+
 
   const filteredTasks = tasks.filter(
     (task) =>
@@ -135,7 +135,7 @@ export function KanbanBoard({ projectId }) {
             <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
               {projectTitle}
             </h1>
-            <p className="text-gray-600">{projectDescription}</p>
+          <p className="text-gray-600">{currentProject?.description || 'Loading...'}</p>
           </div>
           <div className="flex items-center gap-4">
             <div className="relative">

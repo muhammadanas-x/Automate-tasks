@@ -109,7 +109,7 @@ export function ProjectSidebar({ currentProjectId }) {
   // Show loading state
   if (loading) {
     return (
-      <div className="flex flex-col h-full p-4">
+      <div className="flex  flex-col h-full p-4">
         <div className="flex items-center gap-2 mb-8">
           <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
             <div className="w-4 h-4 bg-white rounded-sm" />
