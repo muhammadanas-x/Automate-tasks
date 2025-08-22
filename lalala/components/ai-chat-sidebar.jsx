@@ -45,8 +45,6 @@ const getProjectContext = (projectId, tasks, getProjectTasks) => {
   }
 }
 
-
-
 export function AiChatSidebar({ projectId }) {
   const { createTask, currentProject, tasks, getProjectTasks } = useProject()
   const [messages, setMessages] = useState([])
@@ -57,7 +55,6 @@ export function AiChatSidebar({ projectId }) {
 
   const quickPrompts = getQuickPrompts(projectId)
   const projectContext = getProjectContext(projectId, tasks, getProjectTasks)
-
 
   console.log(projectContext.tasks)
 
@@ -156,15 +153,11 @@ export function AiChatSidebar({ projectId }) {
 
                 }
 
-
                setMessages((prev) => [...prev, aiMessage])
 
             }
           
       }
-
-
-
 
     } catch (error) {
       console.error("AI Chat Error:", error)
@@ -192,51 +185,54 @@ export function AiChatSidebar({ projectId }) {
   }
 
   return (
-    <div className="flex flex-col h-full p-4">
-      <div className="flex items-center gap-2 mb-6">
-        <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
-          <Bot className="w-4 h-4 text-white" />
+    <div className="flex flex-col h-full max-h-full">
+      {/* Header */}
+      <div className="flex-shrink-0 p-4 pb-0">
+        <div className="flex items-center gap-2 mb-6">
+          <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
+            <Bot className="w-4 h-4 text-white" />
+          </div>
+          <h2 className="font-semibold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+            AI Project Pilot
+          </h2>
+          <Sparkles className="w-4 h-4 text-blue-600 ml-auto" />
         </div>
-        <h2 className="font-semibold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-          AI Project Pilot
-        </h2>
-        <Sparkles className="w-4 h-4 text-blue-600 ml-auto" />
+
+        <Card className="mb-6 backdrop-blur-sm bg-white/80 border-white/20 shadow-lg">
+          <CardContent className="p-4">
+            <p className="text-sm text-gray-600">
+              Project:{" "}
+              <span className="font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                {currentProject?.name || "New Project"}
+              </span>
+            </p>
+            <p className="text-xs text-gray-500 mt-2">{projectContext.projectId}</p>
+          </CardContent>
+        </Card>
+
+        {messages.length === 0 && (
+          <div className="mb-6">
+            <h3 className="text-sm font-medium text-gray-700 mb-3">QUICK PROMPTS</h3>
+            <div className="space-y-2">
+              {quickPrompts.map((prompt, index) => (
+                <Button
+                  key={index}
+                  variant="ghost"
+                  className="w-full text-left text-xs p-3 h-auto whitespace-normal justify-start hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 rounded-xl transition-all duration-300 text-gray-600 hover:text-gray-900"
+                  onClick={() => handleQuickPrompt(prompt)}
+                >
+                  {prompt}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
-      <Card className="mb-6 backdrop-blur-sm bg-white/80 border-white/20 shadow-lg">
-        <CardContent className="p-4">
-          <p className="text-sm text-gray-600">
-            Project:{" "}
-            <span className="font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              {currentProject?.name || "New Project"}
-            </span>
-          </p>
-        <p className="text-xs text-gray-500 mt-2">{projectContext.projectId}</p>
-        </CardContent>
-      </Card>
-
-      {messages.length === 0 && (
-        <div className="mb-6">
-          <h3 className="text-sm font-medium text-gray-700 mb-3">QUICK PROMPTS</h3>
-          <div className="space-y-2">
-            {quickPrompts.map((prompt, index) => (
-              <Button
-                key={index}
-                variant="ghost"
-                className="w-full text-left text-xs p-3 h-auto whitespace-normal justify-start hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 rounded-xl transition-all duration-300 text-gray-600 hover:text-gray-900"
-                onClick={() => handleQuickPrompt(prompt)}
-              >
-                {prompt}
-              </Button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Chat Messages Area */}
-      <div className="flex-1 mb-4">
+      {/* Chat Messages Area - This now has proper flex behavior */}
+      <div className="flex-1 min-h-0 px-4">
         <ScrollArea className="h-full" ref={scrollAreaRef}>
-          <div className="space-y-4 pr-4">
+          <div className="space-y-4 pr-4 pb-4">
             {messages.length === 0 ? (
               <div className="text-center text-gray-500 text-sm py-8">
                 <Bot className="w-8 h-8 mx-auto mb-2 text-gray-400" />
@@ -262,15 +258,14 @@ export function AiChatSidebar({ projectId }) {
                   >
                     <p>{message.content}</p>
 
-
-                     {/* task list (only if AI and tasks exist) */}
-                      {message.sender === "ai" && message.tasks?.length > 0 && (
-                        <ul className="mt-2 space-y-1 text-xs list-disc list-inside">
-                          {message.tasks.map((task) => (
-                            <li key={task.id}>{task.title} </li>
-                          ))}
-                        </ul>
-      )}
+                    {/* task list (only if AI and tasks exist) */}
+                    {message.sender === "ai" && message.tasks?.length > 0 && (
+                      <ul className="mt-2 space-y-1 text-xs list-disc list-inside">
+                        {message.tasks.map((task) => (
+                          <li key={task.id}>{task.title} </li>
+                        ))}
+                      </ul>
+                    )}
                     <p className={`text-xs mt-1 ${message.sender === "user" ? "text-blue-100" : "text-gray-500"}`}>
                       {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                     </p>
@@ -307,24 +302,27 @@ export function AiChatSidebar({ projectId }) {
         </ScrollArea>
       </div>
 
-      <div className="flex gap-2">
-        <Input
-          ref={inputRef}
-          placeholder="e.g., Plan our product launch..."
-          className="flex-1 bg-white/50 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20"
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          onKeyPress={handleKeyPress}
-          disabled={isTyping}
-        />
-        <Button
-          size="icon"
-          onClick={() => handleSendMessage(inputValue)}
-          disabled={!inputValue.trim() || isTyping}
-          className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300"
-        >
-          <Send className="w-4 h-4" />
-        </Button>
+      {/* Input Area */}
+      <div className="flex-shrink-0 p-4 pt-0">
+        <div className="flex gap-2">
+          <Input
+            ref={inputRef}
+            placeholder="e.g., Plan our product launch..."
+            className="flex-1 bg-white/50 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyPress={handleKeyPress}
+            disabled={isTyping}
+          />
+          <Button
+            size="icon"
+            onClick={() => handleSendMessage(inputValue)}
+            disabled={!inputValue.trim() || isTyping}
+            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+          >
+            <Send className="w-4 h-4" />
+          </Button>
+        </div>
       </div>
     </div>
   )
