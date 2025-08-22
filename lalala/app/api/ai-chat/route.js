@@ -37,13 +37,13 @@ function isQueryingExistingTasks(message) {
 // --- helper to perform RAG search with authentication ---
 async function performRAGSearch(query, request, projectId) {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+    const baseUrl = process.env.NEXT_AUTH_BASE_URL || 'http://localhost:3000'
     
     // Forward cookies from the original request
     const cookies = request.headers.get('cookie')
     
     // Use the projectId in the URL path
-    const response = await fetch(`/api/tasks/search/${projectId}?query=${encodeURIComponent(query)}`, {
+    const response = await fetch(`${baseUrl}/api/tasks/search/${projectId}?query=${encodeURIComponent(query)}`, {
       headers: {
         'Cookie': cookies || '',
         'Content-Type': 'application/json'
