@@ -4,7 +4,7 @@ import { pipeline } from '@xenova/transformers'
 
 // Pinecone setup
 const pc = new Pinecone({
-  apiKey: process.env.PINECONE_API_KEY || "pcsk_2ZfMks_9jAq99bkxRTgVFK2SggAsdBQbzM5aNmDgcV9YEMEZAnMDc8Yv9ZkuqDVcyb5iQi",
+  apiKey: process.env.PINECONE_API_KEY,
 })
 
 const index = pc.index('task-vector')

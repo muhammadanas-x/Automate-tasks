@@ -4,7 +4,7 @@ import { pipeline } from '@xenova/transformers';
 import { v4 as uuidv4 } from 'uuid';
 
 const pc = new Pinecone({
-  apiKey: "pcsk_2ZfMks_9jAq99bkxRTgVFK2SggAsdBQbzM5aNmDgcV9YEMEZAnMDc8Yv9ZkuqDVcyb5iQi",
+  apiKey: process.env.PINECONE_API_KEY,
 });
 
 // Use your existing index name

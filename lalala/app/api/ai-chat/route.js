@@ -3,7 +3,7 @@
 import { NextResponse } from "next/server"
 import { GoogleGenAI } from "@google/genai"
 
-const ai = new GoogleGenAI({ apiKey: "AIzaSyDNfkJBlHiY1dEro5BDLyoLFZoBeCerqKw" })
+const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY})
 
 // --- helper to safely parse JSON ---
 function safeJsonParse(str) {
