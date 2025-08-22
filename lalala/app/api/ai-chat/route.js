@@ -43,7 +43,7 @@ async function performRAGSearch(query, request, projectId) {
     const cookies = request.headers.get('cookie')
     
     // Use the projectId in the URL path
-    const response = await fetch(`${baseUrl}/api/tasks/search/${projectId}?query=${encodeURIComponent(query)}`, {
+    const response = await fetch(`/api/tasks/search/${projectId}?query=${encodeURIComponent(query)}`, {
       headers: {
         'Cookie': cookies || '',
         'Content-Type': 'application/json'
