@@ -34,100 +34,44 @@ function isQueryingExistingTasks(message) {
   return queryKeywords.some(keyword => messageLower.includes(keyword))
 }
 
-// --- helper to get the correct base URL ---
-function getBaseUrl(request) {
-  // First try environment variable
-  if (process.env.NEXT_AUTH_BASE_URL && !process.env.NEXT_AUTH_BASE_URL.includes('127.0.0.1') && !process.env.NEXT_AUTH_BASE_URL.includes('localhost')) {
-    return process.env.NEXT_AUTH_BASE_URL
-  }
-  
-  // Fallback to request headers
-  const host = request.headers.get('host')
-  const protocol = request.headers.get('x-forwarded-proto') || 'https'
-  
-  if (host) {
-    return `${protocol}://${host}`
-  }
-  
-  // Last resort - but this might not work in all environments
-  return process.env.NEXT_AUTH_BASE_URL || 'http://localhost:3000'
-}
-
 // --- helper to perform RAG search with authentication ---
 async function performRAGSearch(query, request, projectId) {
   try {
-    const baseUrl = getBaseUrl(request)
+    const baseUrl = process.env.NEXTAUTH_URL
     
     // Forward cookies from the original request
     const cookies = request.headers.get('cookie')
 
-    console.log('[RAG Search] Using base URL:', baseUrl)
-    console.log('[RAG Search] Project ID:', projectId)
+    console.log(baseUrl)
+
+    console.log(`${baseUrl}/api/tasks/search/${projectId}?query=${encodeURIComponent(query)}`)
     
-    const searchUrl = `${baseUrl}/api/tasks/search/${projectId}?query=${encodeURIComponent(query)}`
-    console.log('[RAG Search] Full URL:', searchUrl)
+    // Use the projectId in the URL path
+    const response = await fetch(`${baseUrl}/api/tasks/search/${projectId}?query=${encodeURIComponent(query)}`, {
+      headers: {
+        'Cookie': cookies || '',
+        'Content-Type': 'application/json'
+      },
+    })
     
-    // Add timeout and better error handling
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
     
-    try {
-      const response = await fetch(searchUrl, {
-        method: 'GET',
-        headers: {
-          'Cookie': cookies || '',
-          'Content-Type': 'application/json',
-          'User-Agent': 'internal-api-call'
-        },
-        signal: controller.signal
-      })
-      
-      clearTimeout(timeoutId)
-      
-      console.log('[RAG Search] Response status:', response.status)
-      
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.error('[RAG Search] Error response:', errorText)
-        
-        if (response.status === 404) {
-          return null // No matching tasks found
-        }
-        if (response.status === 401) {
-          throw new Error('Authentication required')
-        }
-        throw new Error(`RAG search failed: ${response.status} - ${errorText}`)
+    if (!response.ok) {
+      if (response.status === 404) {
+        return null // No matching tasks found
       }
-      
-      const result = await response.json()
-      console.log('[RAG Search] Success:', result)
-      return result
-      
-    } catch (fetchError) {
-      clearTimeout(timeoutId)
-      throw fetchError
+      if (response.status === 401) {
+        throw new Error('Authentication required')
+      }
+      throw new Error(`RAG search failed: ${response.status}`)
     }
     
+    return await response.json()
   } catch (error) {
-    console.error('[RAG Search Error]:', {
-      message: error.message,
-      name: error.name,
-      code: error.code,
-      cause: error.cause
-    })
+    console.error('[RAG Search Error]:', error)
     
     // Re-throw authentication errors so they can be handled properly
     if (error.message === 'Authentication required') {
       throw error
-    }
-    
-    // Handle specific connection errors
-    if (error.code === 'ECONNREFUSED') {
-      console.error('[RAG Search] Connection refused - server may not be accessible at the configured URL')
-    }
-    
-    if (error.name === 'AbortError') {
-      console.error('[RAG Search] Request timed out')
     }
     
     return null
@@ -138,11 +82,7 @@ export async function POST(request) {
   try {
     const { message, projectContext, projectId } = await request.json()
 
-    console.log("[AI Chat] Request received:", { 
-      message: message?.substring(0, 100) + (message?.length > 100 ? '...' : ''),
-      projectContext: projectContext?.substring(0, 100) + (projectContext?.length > 100 ? '...' : ''),
-      projectId 
-    })
+    console.log("[v0] AI Chat request received:", { message, projectContext, projectId })
 
     // Validate projectId is provided
     if (!projectId) {
@@ -157,7 +97,7 @@ export async function POST(request) {
     const isQuerying = isQueryingExistingTasks(message)
     
     if (isQuerying) {
-      console.log("[AI Chat] Detected query for existing tasks, performing RAG search...")
+      console.log("[v0] Detected query for existing tasks, performing RAG search...")
       
       try {
         // Perform RAG search with authentication and projectId
@@ -165,9 +105,8 @@ export async function POST(request) {
         
         if (!ragResult) {
           return NextResponse.json({
-            message: "I couldn't find any tasks matching your query. This could be because:\n• No tasks match your search criteria\n• There was a connection issue\n• The task search service is temporarily unavailable\n\nWould you like to create a new task instead?",
-            tasks: [],
-            searchAttempted: true
+            message: "I couldn't find any tasks matching your query. Would you like to create a new task instead?",
+            tasks: []
           })
         }
 
@@ -203,35 +142,26 @@ export async function POST(request) {
         })
 
         const ragContent = ragResponse.text
-        console.log("[AI Chat] RAG-based response generated successfully")
+        console.log("[v0] RAG-based Gemini response:", ragContent)
 
         const ragJsonResponse = safeJsonParse(ragContent || "{}")
         
         // Include the original task data for frontend use if needed
         ragJsonResponse.retrievedTask = ragResult
-        ragJsonResponse.searchSuccessful = true
         
         return NextResponse.json(ragJsonResponse)
         
       } catch (error) {
         if (error.message === 'Authentication required') {
           return NextResponse.json({
-            message: "Authentication required to search tasks. Please make sure you're logged in.",
+            message: "Authentication required to search tasks.",
             tasks: [],
             error: "unauthorized"
           }, { status: 401 })
         }
         
         // For other errors, fall back to task creation mode
-        console.warn("[AI Chat] RAG search failed, falling back to task creation:", error.message)
-        
-        // Provide more specific error message to user
-        return NextResponse.json({
-          message: "I'm having trouble searching for existing tasks right now. This might be due to a temporary connection issue. Would you like to create a new task instead?",
-          tasks: [],
-          error: "search_failed",
-          fallbackToCreation: true
-        })
+        console.warn("[v0] RAG search failed, falling back to task creation:", error.message)
       }
     }
 
@@ -274,24 +204,20 @@ export async function POST(request) {
     })
 
     const content = response.text
-    console.log("[AI Chat] Task creation response generated successfully")
+    console.log("[v0] Gemini response:", content)
 
     const jsonResponse = safeJsonParse(content || "{}")
-    jsonResponse.taskCreation = true
 
+    console.log(jsonResponse)
     return NextResponse.json(jsonResponse)
 
   } catch (error) {
-    console.error("[AI Chat] API Error:", {
-      message: error.message,
-      stack: process.env.NODE_ENV === "development" ? error.stack : undefined
-    })
-    
+    console.error("[v0] AI Chat API Error:", error)
     return NextResponse.json(
       {
-        message: "I'm having trouble processing your request right now. Please try again in a moment.",
+        message: "I'm having trouble connecting right now. Please try again later.",
         tasks: [],
-        error: process.env.NODE_ENV === "development" ? error.message : "internal_server_error",
+        error: process.env.NODE_ENV === "development" ? error.message : undefined,
       },
       { status: 500 },
     )
