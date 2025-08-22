@@ -1,34 +1,171 @@
-'use client'
+"use client"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { useEffect, useState } from "react"
 
 export default function Home() {
   const router = useRouter()
+  const [isLoaded, setIsLoaded] = useState(false)
 
+  useEffect(() => {
+    setIsLoaded(true)
+  }, [])
 
   const handleLogin = () => {
     router.push("/login")
   }
 
-
   const handleSignup = () => {
-        router.push("/signup")
-
+    router.push("/signup")
   }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 relative overflow-hidden">
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-10 left-10 w-[500px] h-[500px] bg-gradient-to-br from-blue-400/20 via-indigo-300/15 to-purple-400/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute top-40 right-10 w-[400px] h-[400px] bg-gradient-to-br from-rose-300/20 via-pink-300/15 to-red-400/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute bottom-20 left-1/4 w-[350px] h-[350px] bg-gradient-to-br from-cyan-300/15 via-blue-400/10 to-indigo-400/15 rounded-full blur-3xl animate-pulse delay-2000"></div>
-        <div className="absolute top-1/2 right-1/3 w-[300px] h-[300px] bg-gradient-to-br from-violet-300/10 via-purple-300/15 to-fuchsia-400/10 rounded-full blur-3xl animate-pulse delay-500"></div>
+    <div className="min-h-screen relative overflow-hidden">
+      <style jsx>{`
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        @keyframes fadeInLeft {
+          from {
+            opacity: 0;
+            transform: translateX(-30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+        
+        @keyframes fadeInRight {
+          from {
+            opacity: 0;
+            transform: translateX(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+        
+        @keyframes scaleIn {
+          from {
+            opacity: 0;
+            transform: scale(0.9);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+        
+        @keyframes slideInDown {
+          from {
+            opacity: 0;
+            transform: translateY(-30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        .animate-fadeInUp {
+          animation: fadeInUp 0.8s ease-out forwards;
+        }
+        
+        .animate-fadeInLeft {
+          animation: fadeInLeft 0.8s ease-out forwards;
+        }
+        
+        .animate-fadeInRight {
+          animation: fadeInRight 0.8s ease-out forwards;
+        }
+        
+        .animate-scaleIn {
+          animation: scaleIn 0.8s ease-out forwards;
+        }
+        
+        .animate-slideInDown {
+          animation: slideInDown 0.8s ease-out forwards;
+        }
+        
+        .animate-delay-100 {
+          animation-delay: 0.1s;
+        }
+        
+        .animate-delay-200 {
+          animation-delay: 0.2s;
+        }
+        
+        .animate-delay-300 {
+          animation-delay: 0.3s;
+        }
+        
+        .animate-delay-400 {
+          animation-delay: 0.4s;
+        }
+        
+        .animate-delay-500 {
+          animation-delay: 0.5s;
+        }
+        
+        .animate-delay-600 {
+          animation-delay: 0.6s;
+        }
+        
+        .animate-delay-700 {
+          animation-delay: 0.7s;
+        }
+        
+        .animate-delay-800 {
+          animation-delay: 0.8s;
+        }
+        
+        .animate-delay-1000 {
+          animation-delay: 1s;
+        }
+        
+        .initial-hidden {
+          opacity: 0;
+        }
+      `}</style>
+
+      <div className="absolute inset-0 bg-gradient-to-br from-violet-50 via-rose-50 to-amber-50">
+        {/* Primary color orbs */}
+        <div className="absolute top-10 left-10 w-[600px] h-[600px] bg-gradient-to-br from-blue-400/30 via-indigo-500/25 to-purple-600/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute top-40 right-10 w-[500px] h-[500px] bg-gradient-to-br from-rose-400/25 via-pink-500/20 to-red-500/15 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute bottom-20 left-1/4 w-[450px] h-[450px] bg-gradient-to-br from-cyan-400/20 via-teal-500/15 to-emerald-500/20 rounded-full blur-3xl animate-pulse delay-2000"></div>
+        <div className="absolute top-1/2 right-1/3 w-[400px] h-[400px] bg-gradient-to-br from-violet-400/15 via-purple-500/20 to-fuchsia-500/15 rounded-full blur-3xl animate-pulse delay-500"></div>
+
+        {/* Secondary accent orbs */}
+        <div className="absolute bottom-10 right-20 w-[350px] h-[350px] bg-gradient-to-br from-orange-400/20 via-amber-500/15 to-yellow-500/10 rounded-full blur-3xl animate-pulse delay-3000"></div>
+        <div className="absolute top-20 left-1/2 w-[300px] h-[300px] bg-gradient-to-br from-lime-400/15 via-green-500/10 to-emerald-400/15 rounded-full blur-3xl animate-pulse delay-1500"></div>
+
+        {/* Floating color particles */}
+        <div className="absolute top-1/4 left-1/5 w-32 h-32 bg-gradient-to-br from-blue-500/20 to-indigo-600/15 rounded-full blur-2xl animate-bounce"></div>
+        <div className="absolute top-3/4 right-1/4 w-24 h-24 bg-gradient-to-br from-pink-500/25 to-rose-600/20 rounded-full blur-xl animate-bounce delay-700"></div>
+        <div className="absolute top-1/2 left-3/4 w-28 h-28 bg-gradient-to-br from-purple-500/20 to-violet-600/15 rounded-full blur-xl animate-bounce delay-1400"></div>
+
+        {/* Subtle mesh gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent"></div>
+        <div className="absolute inset-0 bg-gradient-to-bl from-blue-50/30 via-transparent to-purple-50/20"></div>
       </div>
 
-      <nav className="relative z-10 flex items-center justify-between px-8 py-6 max-w-7xl mx-auto backdrop-blur-sm bg-white/70 rounded-2xl mx-6 mt-4 shadow-lg border border-white/20">
+      <nav
+        className={`relative z-10 flex items-center justify-between px-8 py-6 max-w-7xl mx-auto backdrop-blur-sm bg-white/70 rounded-2xl mx-6 mt-4 shadow-lg border border-white/20 ${isLoaded ? "animate-slideInDown" : "initial-hidden"}`}
+      >
         <div className="flex items-center">
           <div className="text-3xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
             TrelloAI
@@ -47,7 +184,7 @@ export default function Home() {
           >
             Contact
           </a>
-          <Link href={"/signup"}>
+          <Link href={"/login"}>
             <Button
               variant="outline"
               className="rounded-full bg-white/50 backdrop-blur-sm border-gray-200/50 hover:bg-white/80 hover:scale-105 transition-all duration-300"
@@ -55,33 +192,38 @@ export default function Home() {
               Login
             </Button>
           </Link>
-          <Link href={"/login"}>
-          <Button className="rounded-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300">
-            Sign Up
-          </Button>
-        </Link>
-
+          <Link href={"/signup"}>
+            <Button className="rounded-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300">
+              Sign Up
+            </Button>
+          </Link>
         </div>
       </nav>
 
       <section className="relative z-10 flex flex-col items-center justify-center px-6 py-24 max-w-5xl mx-auto text-center">
-        <div className="mb-6 px-4 py-2 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-full border border-blue-200/50">
+        <div
+          className={`mb-6 px-4 py-2 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-full border border-blue-200/50 ${isLoaded ? "animate-fadeInUp animate-delay-200" : "initial-hidden"}`}
+        >
           <span className="text-sm font-medium text-blue-700">✨ AI-Powered Project Management</span>
         </div>
 
-        <h1 className="text-6xl md:text-7xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-900 bg-clip-text text-transparent mb-6 leading-tight tracking-tight">
+        <h1
+          className={`text-6xl md:text-7xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-900 bg-clip-text text-transparent mb-6 leading-tight tracking-tight ${isLoaded ? "animate-fadeInUp animate-delay-300" : "initial-hidden"}`}
+        >
           Turn your ideas into organized projects
           <span className="block bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
             instantly
           </span>
         </h1>
 
-        <p className="text-xl text-gray-600 mb-16 max-w-3xl leading-relaxed">
+        <p
+          className={`text-xl text-gray-600 mb-16 max-w-3xl leading-relaxed ${isLoaded ? "animate-fadeInUp animate-delay-400" : "initial-hidden"}`}
+        >
           AI-powered productivity that automates your Trello workflows. Just describe what you need, and watch your
           project come to life with intelligent task organization and smart automation.
         </p>
 
-        <div className="w-full max-w-3xl">
+        <div className={`w-full max-w-3xl ${isLoaded ? "animate-scaleIn animate-delay-500" : "initial-hidden"}`}>
           <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50 p-8 hover:shadow-3xl transition-all duration-500 hover:scale-[1.02]">
             <Input
               placeholder="Describe your project idea... (e.g., 'Create a marketing campaign for our new product launch with timeline and deliverables')"
@@ -97,21 +239,21 @@ export default function Home() {
         </div>
 
         <div className="grid md:grid-cols-3 gap-8 mt-20 max-w-4xl">
-          <div className="text-center group">
+          <div className={`text-center group ${isLoaded ? "animate-fadeInLeft animate-delay-600" : "initial-hidden"}`}>
             <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl mx-auto mb-4 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
               <span className="text-2xl">🤖</span>
             </div>
             <h3 className="font-semibold text-gray-900 mb-2">Smart AI Analysis</h3>
             <p className="text-gray-600 text-sm">Understands context and creates detailed project structures</p>
           </div>
-          <div className="text-center group">
+          <div className={`text-center group ${isLoaded ? "animate-fadeInUp animate-delay-700" : "initial-hidden"}`}>
             <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl mx-auto mb-4 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
               <span className="text-2xl">⚡</span>
             </div>
             <h3 className="font-semibold text-gray-900 mb-2">Instant Setup</h3>
             <p className="text-gray-600 text-sm">From idea to organized Trello board in seconds</p>
           </div>
-          <div className="text-center group">
+          <div className={`text-center group ${isLoaded ? "animate-fadeInRight animate-delay-800" : "initial-hidden"}`}>
             <div className="w-16 h-16 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl mx-auto mb-4 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
               <span className="text-2xl">🎯</span>
             </div>
@@ -121,25 +263,25 @@ export default function Home() {
         </div>
 
         <div className="grid md:grid-cols-4 gap-8 mt-20 max-w-5xl w-full">
-          <div className="text-center">
+          <div className={`text-center ${isLoaded ? "animate-fadeInUp animate-delay-600" : "initial-hidden"}`}>
             <div className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">
               50K+
             </div>
             <p className="text-gray-600 text-sm">Projects Created</p>
           </div>
-          <div className="text-center">
+          <div className={`text-center ${isLoaded ? "animate-fadeInUp animate-delay-700" : "initial-hidden"}`}>
             <div className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
               15K+
             </div>
             <p className="text-gray-600 text-sm">Happy Users</p>
           </div>
-          <div className="text-center">
+          <div className={`text-center ${isLoaded ? "animate-fadeInUp animate-delay-800" : "initial-hidden"}`}>
             <div className="text-4xl font-bold bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-transparent mb-2">
               98%
             </div>
             <p className="text-gray-600 text-sm">Success Rate</p>
           </div>
-          <div className="text-center">
+          <div className={`text-center ${isLoaded ? "animate-fadeInUp animate-delay-1000" : "initial-hidden"}`}>
             <div className="text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-2">
               24/7
             </div>
@@ -150,7 +292,7 @@ export default function Home() {
 
       <section className="relative z-10 py-24 px-6 bg-gradient-to-br from-blue-50/30 via-white to-purple-50/20">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
+          <div className={`text-center mb-16 ${isLoaded ? "animate-fadeInUp animate-delay-200" : "initial-hidden"}`}>
             <h2 className="text-5xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-6">
               Powerful Features for Modern Teams
             </h2>
@@ -160,7 +302,9 @@ export default function Home() {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <Card className="bg-white/90 backdrop-blur-xl border-white/50 shadow-xl rounded-3xl hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] group p-8">
+            <Card
+              className={`bg-white/90 backdrop-blur-xl border-white/50 shadow-xl rounded-3xl hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] group p-8 ${isLoaded ? "animate-fadeInLeft animate-delay-300" : "initial-hidden"}`}
+            >
               <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl mb-6 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                 <span className="text-2xl">🧠</span>
               </div>
@@ -171,7 +315,9 @@ export default function Home() {
               </p>
             </Card>
 
-            <Card className="bg-white/90 backdrop-blur-xl border-white/50 shadow-xl rounded-3xl hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] group p-8">
+            <Card
+              className={`bg-white/90 backdrop-blur-xl border-white/50 shadow-xl rounded-3xl hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] group p-8 ${isLoaded ? "animate-fadeInUp animate-delay-400" : "initial-hidden"}`}
+            >
               <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl mb-6 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                 <span className="text-2xl">🎯</span>
               </div>
@@ -182,7 +328,9 @@ export default function Home() {
               </p>
             </Card>
 
-            <Card className="bg-white/90 backdrop-blur-xl border-white/50 shadow-xl rounded-3xl hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] group p-8">
+            <Card
+              className={`bg-white/90 backdrop-blur-xl border-white/50 shadow-xl rounded-3xl hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] group p-8 ${isLoaded ? "animate-fadeInRight animate-delay-500" : "initial-hidden"}`}
+            >
               <div className="w-16 h-16 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl mb-6 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                 <span className="text-2xl">⚡</span>
               </div>
@@ -192,7 +340,9 @@ export default function Home() {
               </p>
             </Card>
 
-            <Card className="bg-white/90 backdrop-blur-xl border-white/50 shadow-xl rounded-3xl hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] group p-8">
+            <Card
+              className={`bg-white/90 backdrop-blur-xl border-white/50 shadow-xl rounded-3xl hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] group p-8 ${isLoaded ? "animate-fadeInLeft animate-delay-600" : "initial-hidden"}`}
+            >
               <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl mb-6 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                 <span className="text-2xl">🔄</span>
               </div>
@@ -203,7 +353,9 @@ export default function Home() {
               </p>
             </Card>
 
-            <Card className="bg-white/90 backdrop-blur-xl border-white/50 shadow-xl rounded-3xl hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] group p-8">
+            <Card
+              className={`bg-white/90 backdrop-blur-xl border-white/50 shadow-xl rounded-3xl hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] group p-8 ${isLoaded ? "animate-fadeInUp animate-delay-700" : "initial-hidden"}`}
+            >
               <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl mb-6 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                 <span className="text-2xl">📊</span>
               </div>
@@ -214,7 +366,9 @@ export default function Home() {
               </p>
             </Card>
 
-            <Card className="bg-white/90 backdrop-blur-xl border-white/50 shadow-xl rounded-3xl hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] group p-8">
+            <Card
+              className={`bg-white/90 backdrop-blur-xl border-white/50 shadow-xl rounded-3xl hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] group p-8 ${isLoaded ? "animate-fadeInRight animate-delay-800" : "initial-hidden"}`}
+            >
               <div className="w-16 h-16 bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl mb-6 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                 <span className="text-2xl">🤝</span>
               </div>
@@ -228,9 +382,11 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="relative z-10 py-24 px-6">
+      <section
+        className={`relative z-10 py-24 px-6 ${isLoaded ? "animate-fadeInUp animate-delay-400" : "initial-hidden"}`}
+      >
         <div className="max-w-6xl mx-auto text-center">
-          <h2 className="text-5xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-6">
+          <h2 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-6">
             See TrelloAI in Action
           </h2>
           <p className="text-xl text-gray-600 mb-12 max-w-3xl mx-auto">
@@ -286,22 +442,27 @@ export default function Home() {
                 </div>
               </div>
             </div>
-            <Button
-              size="lg"
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-2xl px-8 py-3 text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
-            >
-              Try the Demo →
-            </Button>
+            <Link href={"/signup"}>
+              <Button
+                size="lg"
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-2xl px-8 py-3 text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
+              >
+                Try the Demo →
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
 
-      <section id="testimonials" className="relative z-10 py-24 px-6 max-w-7xl mx-auto">
+      <section
+        id="testimonials"
+        className={`relative z-10 py-24 px-6 max-w-7xl mx-auto ${isLoaded ? "animate-fadeInUp animate-delay-500" : "initial-hidden"}`}
+      >
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-10 left-10 w-[500px] h-[500px] bg-gradient-to-br from-blue-400/20 via-indigo-300/15 to-purple-400/10 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute top-40 right-10 w-[400px] h-[400px] bg-gradient-to-br from-rose-300/20 via-pink-300/15 to-red-400/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
-          <div className="absolute bottom-20 left-1/4 w-[350px] h-[350px] bg-gradient-to-br from-cyan-300/15 via-blue-400/10 to-indigo-400/15 rounded-full blur-3xl animate-pulse delay-2000"></div>
-          <div className="absolute top-1/2 right-1/3 w-[300px] h-[300px] bg-gradient-to-br from-violet-300/10 via-purple-300/15 to-fuchsia-400/10 rounded-full blur-3xl animate-pulse delay-500"></div>
+          <div className="absolute top-10 left-10 w-[600px] h-[600px] bg-gradient-to-br from-emerald-400/20 via-teal-300/15 to-cyan-400/10 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute top-40 right-10 w-[500px] h-[500px] bg-gradient-to-br from-violet-300/20 via-purple-300/15 to-fuchsia-400/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+          <div className="absolute bottom-20 left-1/4 w-[450px] h-[450px] bg-gradient-to-br from-orange-300/15 via-amber-400/10 to-yellow-400/15 rounded-full blur-3xl animate-pulse delay-2000"></div>
+          <div className="absolute top-1/2 right-1/3 w-[400px] h-[400px] bg-gradient-to-br from-rose-300/10 via-pink-300/15 to-red-400/10 rounded-full blur-3xl animate-pulse delay-500"></div>
         </div>
 
         <div className="text-center mb-16">
@@ -312,7 +473,9 @@ export default function Home() {
         </div>
 
         <div className="grid md:grid-cols-3 gap-8">
-          <Card className="bg-white/90 backdrop-blur-xl border-white/50 shadow-xl rounded-3xl hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] group">
+          <Card
+            className={`bg-white/90 backdrop-blur-xl border-white/50 shadow-xl rounded-3xl hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] group ${isLoaded ? "animate-fadeInLeft animate-delay-600" : "initial-hidden"}`}
+          >
             <CardContent className="p-8">
               <div className="flex mb-4">
                 {[...Array(5)].map((_, i) => (
@@ -337,7 +500,9 @@ export default function Home() {
             </CardContent>
           </Card>
 
-          <Card className="bg-white/90 backdrop-blur-xl border-white/50 shadow-xl rounded-3xl hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] group">
+          <Card
+            className={`bg-white/90 backdrop-blur-xl border-white/50 shadow-xl rounded-3xl hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] group ${isLoaded ? "animate-fadeInUp animate-delay-700" : "initial-hidden"}`}
+          >
             <CardContent className="p-8">
               <div className="flex mb-4">
                 {[...Array(5)].map((_, i) => (
@@ -362,7 +527,9 @@ export default function Home() {
             </CardContent>
           </Card>
 
-          <Card className="bg-white/90 backdrop-blur-xl border-white/50 shadow-xl rounded-3xl hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] group">
+          <Card
+            className={`bg-white/90 backdrop-blur-xl border-white/50 shadow-xl rounded-3xl hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] group ${isLoaded ? "animate-fadeInRight animate-delay-800" : "initial-hidden"}`}
+          >
             <CardContent className="p-8">
               <div className="flex mb-4">
                 {[...Array(5)].map((_, i) => (
@@ -389,7 +556,9 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="relative z-10 py-24 px-6 bg-gradient-to-br from-indigo-50/50 via-white to-blue-50/30">
+      <section
+        className={`relative z-10 py-24 px-6 bg-gradient-to-br from-indigo-50/50 via-white to-blue-50/30 ${isLoaded ? "animate-fadeInUp animate-delay-600" : "initial-hidden"}`}
+      >
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-5xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-6">
             Ready to Transform Your Workflow?
@@ -420,9 +589,11 @@ export default function Home() {
                     Email support
                   </li>
                 </ul>
-                <Button className="w-full py-3 rounded-2xl bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 transition-all duration-300">
-                  Start Free Trial
-                </Button>
+                <Link href={"/signup"}>
+                  <Button className="w-full py-3 rounded-2xl bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 transition-all duration-300">
+                    Start Free Trial
+                  </Button>
+                </Link>
               </div>
             </Card>
 
@@ -457,7 +628,7 @@ export default function Home() {
                   </li>
                 </ul>
                 <Button className="w-full py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl">
-                  Get Started Now →
+                  COMING SOON
                 </Button>
               </div>
             </Card>
@@ -465,7 +636,10 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="contact" className="relative z-10 py-24 px-6 bg-gradient-to-br from-slate-50/50 to-blue-50/30">
+      <section
+        id="contact"
+        className={`relative z-10 py-24 px-6 bg-gradient-to-br from-slate-50/50 to-blue-50/30 ${isLoaded ? "animate-fadeInUp animate-delay-700" : "initial-hidden"}`}
+      >
         <div className="max-w-2xl mx-auto text-center">
           <h2 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-6">
             Get in touch
@@ -509,7 +683,9 @@ export default function Home() {
         </div>
       </section>
 
-      <footer className="relative z-10 py-12 px-6 border-t border-gray-200/50 bg-white/50 backdrop-blur-sm">
+      <footer
+        className={`relative z-10 py-12 px-6 border-t border-gray-200/50 bg-white/50 backdrop-blur-sm ${isLoaded ? "animate-fadeInUp animate-delay-800" : "initial-hidden"}`}
+      >
         <div className="max-w-7xl mx-auto text-center">
           <div className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-4">
             TrelloAI
