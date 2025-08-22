@@ -4,8 +4,10 @@ import { Pinecone } from '@pinecone-database/pinecone'
 import { pipeline, env } from '@xenova/transformers'
 import jwt from 'jsonwebtoken'
 
-// Set cache directory to /tmp (writable in serverless environments)
-env.cacheDir = '/tmp/.transformers-cache'
+// Disable file-based caching entirely
+env.useBrowserCache = false
+env.allowLocalModels = false
+env.allowRemoteModels = true
 
 const pc = new Pinecone({
   apiKey: process.env.PINECONE_API_KEY,
@@ -19,9 +21,17 @@ let embedder = null
 async function getEmbedder() {
   if (!embedder) {
     console.log('Loading 1024D embedder...')
-    // Using e5-large-v2 (1024 dimensions) to match your index
-    embedder = await pipeline('feature-extraction', 'Xenova/e5-large-v2')
-    console.log('1024D Embedder loaded successfully')
+    try {
+      // Using e5-large-v2 (1024 dimensions) to match your index
+      embedder = await pipeline('feature-extraction', 'Xenova/e5-large-v2', {
+        cache_dir: null, // Disable caching for this model
+        local_files_only: false
+      })
+      console.log('1024D Embedder loaded successfully')
+    } catch (error) {
+      console.error('Error loading embedder:', error)
+      throw error
+    }
   }
   return embedder
 }
