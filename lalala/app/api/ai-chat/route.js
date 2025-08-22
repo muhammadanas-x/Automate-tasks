@@ -53,6 +53,10 @@ async function performRAGSearch(query, request, projectId) {
         'Content-Type': 'application/json'
       },
     })
+
+    console.log("hi")
+
+    console.log(response)
     
     
     if (!response.ok) {
