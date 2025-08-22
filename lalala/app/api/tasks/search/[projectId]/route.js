@@ -1,13 +1,19 @@
 // app/api/tasks/search/[projectId]/route.js
 import { NextResponse } from 'next/server'
 import { Pinecone } from '@pinecone-database/pinecone'
-import { pipeline, env } from '@xenova/transformers'
 import jwt from 'jsonwebtoken'
 
-// Disable file-based caching entirely
-env.useBrowserCache = false
+// Set environment variables before importing transformers
+process.env.TRANSFORMERS_CACHE = '/tmp'
+process.env.HF_HOME = '/tmp'
+
+import { pipeline, env } from '@xenova/transformers'
+
+// Configure transformers for Vercel
+env.cacheDir = '/tmp'
 env.allowLocalModels = false
 env.allowRemoteModels = true
+env.useBrowserCache = false
 
 const pc = new Pinecone({
   apiKey: process.env.PINECONE_API_KEY,
@@ -20,16 +26,17 @@ let embedder = null
 
 async function getEmbedder() {
   if (!embedder) {
-    console.log('Loading 1024D embedder...')
+    console.log('Loading 1024D embedder for Vercel...')
     try {
       // Using e5-large-v2 (1024 dimensions) to match your index
       embedder = await pipeline('feature-extraction', 'Xenova/e5-large-v2', {
-        cache_dir: null, // Disable caching for this model
-        local_files_only: false
+        cache_dir: '/tmp',
+        local_files_only: false,
+        revision: 'main'
       })
-      console.log('1024D Embedder loaded successfully')
+      console.log('1024D Embedder loaded successfully on Vercel')
     } catch (error) {
-      console.error('Error loading embedder:', error)
+      console.error('Error loading embedder on Vercel:', error)
       throw error
     }
   }
@@ -133,7 +140,7 @@ export async function GET(req, { params }) {
     })
 
   } catch (error) {
-    console.error('Search error details:', error)
+    console.error('Vercel search error details:', error)
     
     if (error.name === 'JsonWebTokenError') {
       return NextResponse.json({ 
