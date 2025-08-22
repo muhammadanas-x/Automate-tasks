@@ -1,8 +1,11 @@
 // app/api/tasks/search/[projectId]/route.js
 import { NextResponse } from 'next/server'
 import { Pinecone } from '@pinecone-database/pinecone'
-import { pipeline } from '@xenova/transformers'
+import { pipeline, env } from '@xenova/transformers'
 import jwt from 'jsonwebtoken'
+
+// Set cache directory to /tmp (writable in serverless environments)
+env.cacheDir = '/tmp/.transformers-cache'
 
 const pc = new Pinecone({
   apiKey: process.env.PINECONE_API_KEY,
