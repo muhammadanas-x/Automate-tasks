@@ -45,33 +45,7 @@ const getProjectContext = (projectId, tasks, getProjectTasks) => {
   }
 }
 
-const generateAIResponse = (userMessage, projectId, createTask) => {
-  // Simple task creation logic based on user message
-  if (userMessage.toLowerCase().includes("add task") || userMessage.toLowerCase().includes("create task")) {
-    // Extract task details from message (simplified)
-    const taskMatch = userMessage.match(/'([^']+)'/)
-    if (taskMatch) {
-      const taskTitle = taskMatch[1]
-      createTask({
-        title: taskTitle,
-        description: `Task created via AI chat: ${taskTitle}`,
-        assignee: "AI Assistant",
-        status: "todo",
-        priority: userMessage.toLowerCase().includes("high") ? "high" : "medium",
-        projectId: projectId,
-      })
-      return `I've created a new task "${taskTitle}" for your ${projectId} project. You can find it in the To Do column of your kanban board.`
-    }
-  }
 
-  const responses = [
-    `I'll help you create tasks for your ${projectId} project. Based on your request, I suggest breaking this down into smaller, manageable tasks with clear priorities and deadlines.`,
-    `Great idea! For your ${projectId} project, I recommend starting with the core functionality first. Let me suggest some specific tasks that align with your project goals.`,
-    `I understand you want to enhance your ${projectId} project. Here are some actionable tasks I'd recommend adding to your kanban board with appropriate priority levels.`,
-    `Perfect! Let me help you plan this for your ${projectId} project. I'll suggest some tasks that follow best practices for project management and development workflows.`,
-  ]
-  return responses[Math.floor(Math.random() * responses.length)]
-}
 
 export function AiChatSidebar({ projectId }) {
   const { createTask, currentProject, tasks, getProjectTasks } = useProject()
