@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useAuth } from "@/hooks/useAuth"
 
-export default function LoginPage() {
+// Create a component that uses useSearchParams
+function LoginForm() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [rememberMe, setRememberMe] = useState(false)
@@ -53,6 +54,114 @@ export default function LoginPage() {
     }
   }
 
+  return (
+    <Card className="w-full max-w-md backdrop-blur-xl bg-white/90 border-white/30 shadow-2xl hover:shadow-3xl transition-all duration-500 animate-fade-in-up">
+      <CardHeader className="space-y-1 text-center animate-fade-in delay-200">
+        <CardTitle className="text-3xl font-bold bg-gradient-to-r from-violet-900 via-purple-800 to-fuchsia-900 bg-clip-text text-transparent">
+          Welcome back
+        </CardTitle>
+        <CardDescription className="text-gray-600 text-base">Sign in to your TrelloAI account</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6 animate-fade-in delay-300">
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {error && (
+            <div className="text-red-700 text-sm text-center p-3 bg-red-50/80 backdrop-blur-sm rounded-lg border border-red-200/50 animate-shake">
+              {error}
+            </div>
+          )}
+
+          {success && (
+            <div className="text-green-700 text-sm text-center p-3 bg-green-50/80 backdrop-blur-sm rounded-lg border border-green-200/50 animate-fade-in">
+              {success}
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <Label htmlFor="email" className="text-sm font-semibold text-gray-800">
+              Email
+            </Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="Enter your email"
+              className="bg-white/70 backdrop-blur-sm border-gray-200/50 focus:border-violet-400 focus:ring-violet-400/30 focus:ring-4 transition-all duration-300 h-12 text-base"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={loading}
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="password" className="text-sm font-semibold text-gray-800">
+              Password
+            </Label>
+            <Input
+              id="password"
+              type="password"
+              placeholder="Enter your password"
+              className="bg-white/70 backdrop-blur-sm border-gray-200/50 focus:border-violet-400 focus:ring-violet-400/30 focus:ring-4 transition-all duration-300 h-12 text-base"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={loading}
+              required
+            />
+          </div>
+
+          <div className="flex items-center justify-between pt-2">
+            <div className="flex items-center space-x-2">
+              <input
+                id="remember"
+                type="checkbox"
+                className="w-4 h-4 text-violet-600 bg-white/70 border-gray-300 rounded focus:ring-violet-500 focus:ring-2"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                disabled={loading}
+              />
+              <Label htmlFor="remember" className="text-sm text-gray-700 font-medium">
+                Remember me
+              </Label>
+            </div>
+            <Link
+              href="/forgot-password"
+              className="text-sm text-violet-600 hover:text-violet-800 font-medium transition-colors duration-200"
+            >
+              Forgot password?
+            </Link>
+          </div>
+
+          <Button
+            type="submit"
+            className="w-full h-12 bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 hover:from-violet-700 hover:via-purple-700 hover:to-fuchsia-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] text-base"
+            disabled={loading}
+          >
+            {loading ? (
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                <span>Signing In...</span>
+              </div>
+            ) : (
+              "Sign In"
+            )}
+          </Button>
+        </form>
+
+        <p className="text-center text-sm text-gray-700 pt-2">
+          Don't have an account?{" "}
+          <Link
+            href="/signup"
+            className="text-violet-600 hover:text-violet-800 font-semibold transition-colors duration-200"
+          >
+            Sign up
+          </Link>
+        </p>
+      </CardContent>
+    </Card>
+  )
+}
+
+// Main component with Suspense boundary
+export default function LoginPage() {
   return (
     <div className="min-h-screen relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-violet-50 via-sky-50 to-emerald-50"></div>
@@ -117,108 +226,18 @@ export default function LoginPage() {
       </nav>
 
       <div className="relative z-10 flex items-center justify-center min-h-[calc(100vh-120px)] px-4">
-        <Card className="w-full max-w-md backdrop-blur-xl bg-white/90 border-white/30 shadow-2xl hover:shadow-3xl transition-all duration-500 animate-fade-in-up">
-          <CardHeader className="space-y-1 text-center animate-fade-in delay-200">
-            <CardTitle className="text-3xl font-bold bg-gradient-to-r from-violet-900 via-purple-800 to-fuchsia-900 bg-clip-text text-transparent">
-              Welcome back
-            </CardTitle>
-            <CardDescription className="text-gray-600 text-base">Sign in to your TrelloAI account</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6 animate-fade-in delay-300">
-            <form onSubmit={handleSubmit} className="space-y-5">
-              {error && (
-                <div className="text-red-700 text-sm text-center p-3 bg-red-50/80 backdrop-blur-sm rounded-lg border border-red-200/50 animate-shake">
-                  {error}
-                </div>
-              )}
-
-              {success && (
-                <div className="text-green-700 text-sm text-center p-3 bg-green-50/80 backdrop-blur-sm rounded-lg border border-green-200/50 animate-fade-in">
-                  {success}
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-semibold text-gray-800">
-                  Email
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="Enter your email"
-                  className="bg-white/70 backdrop-blur-sm border-gray-200/50 focus:border-violet-400 focus:ring-violet-400/30 focus:ring-4 transition-all duration-300 h-12 text-base"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={loading}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-semibold text-gray-800">
-                  Password
-                </Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Enter your password"
-                  className="bg-white/70 backdrop-blur-sm border-gray-200/50 focus:border-violet-400 focus:ring-violet-400/30 focus:ring-4 transition-all duration-300 h-12 text-base"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={loading}
-                  required
-                />
-              </div>
-
-              <div className="flex items-center justify-between pt-2">
-                <div className="flex items-center space-x-2">
-                  <input
-                    id="remember"
-                    type="checkbox"
-                    className="w-4 h-4 text-violet-600 bg-white/70 border-gray-300 rounded focus:ring-violet-500 focus:ring-2"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                    disabled={loading}
-                  />
-                  <Label htmlFor="remember" className="text-sm text-gray-700 font-medium">
-                    Remember me
-                  </Label>
-                </div>
-                <Link
-                  href="/forgot-password"
-                  className="text-sm text-violet-600 hover:text-violet-800 font-medium transition-colors duration-200"
-                >
-                  Forgot password?
-                </Link>
-              </div>
-
-              <Button
-                type="submit"
-                className="w-full h-12 bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 hover:from-violet-700 hover:via-purple-700 hover:to-fuchsia-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] text-base"
-                disabled={loading}
-              >
-                {loading ? (
-                  <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                    <span>Signing In...</span>
-                  </div>
-                ) : (
-                  "Sign In"
-                )}
-              </Button>
-            </form>
-
-            <p className="text-center text-sm text-gray-700 pt-2">
-              Don't have an account?{" "}
-              <Link
-                href="/signup"
-                className="text-violet-600 hover:text-violet-800 font-semibold transition-colors duration-200"
-              >
-                Sign up
-              </Link>
-            </p>
-          </CardContent>
-        </Card>
+        <Suspense fallback={
+          <Card className="w-full max-w-md backdrop-blur-xl bg-white/90 border-white/30 shadow-2xl">
+            <CardHeader className="space-y-1 text-center">
+              <CardTitle className="text-3xl font-bold bg-gradient-to-r from-violet-900 via-purple-800 to-fuchsia-900 bg-clip-text text-transparent">
+                Welcome back
+              </CardTitle>
+              <CardDescription className="text-gray-600 text-base">Loading...</CardDescription>
+            </CardHeader>
+          </Card>
+        }>
+          <LoginForm />
+        </Suspense>
       </div>
 
       <style jsx>{`
