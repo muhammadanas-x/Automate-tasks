@@ -3,17 +3,10 @@ import { NextResponse } from 'next/server'
 import { Pinecone } from '@pinecone-database/pinecone'
 import jwt from 'jsonwebtoken'
 
-// Set environment variables before importing transformers
-process.env.TRANSFORMERS_CACHE = '/tmp'
-process.env.HF_HOME = '/tmp'
 
-import { pipeline, env } from '@xenova/transformers'
 
-// Configure transformers for Vercel
-env.cacheDir = '/tmp'
-env.allowLocalModels = false
-env.allowRemoteModels = true
-env.useBrowserCache = false
+import { pipeline } from '@xenova/transformers'
+
 
 const pc = new Pinecone({
   apiKey: process.env.PINECONE_API_KEY,
@@ -29,11 +22,7 @@ async function getEmbedder() {
     console.log('Loading 1024D embedder for Vercel...')
     try {
       // Using e5-large-v2 (1024 dimensions) to match your index
-      embedder = await pipeline('feature-extraction', 'Xenova/e5-large-v2', {
-        cache_dir: '/tmp',
-        local_files_only: false,
-        revision: 'main'
-      })
+      embedder = await pipeline('feature-extraction', 'Xenova/e5-large-v2')
       console.log('1024D Embedder loaded successfully on Vercel')
     } catch (error) {
       console.error('Error loading embedder on Vercel:', error)
