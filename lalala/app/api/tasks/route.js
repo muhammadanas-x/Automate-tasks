@@ -8,7 +8,7 @@ const pc = new Pinecone({
 });
 
 // Use your existing index name
-const index = pc.index('task-vector');
+const index = pc.index('task-vectors');
 
 // Initialize the embedding model (this will be cached after first use)
 let embedder = null;

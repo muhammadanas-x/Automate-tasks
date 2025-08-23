@@ -7,30 +7,34 @@ import jwt from "jsonwebtoken"
 import { Pinecone } from '@pinecone-database/pinecone'
 import { pipeline } from '@xenova/transformers'
 
+
+import OpenAI from 'openai';
+
+const openai = new OpenAI({
+  baseURL: 'https://api.aimlapi.com/v1',
+  apiKey: process.env.OPENAI_API_KEY, // or pass key in another way
+});
 // Pinecone setup
 const pc = new Pinecone({
-  apiKey: process.env.PINECONE_API_KEY || "pcsk_2ZfMks_9jAq99bkxRTgVFK2SggAsdBQbzM5aNmDgcV9YEMEZAnMDc8Yv9ZkuqDVcyb5iQi",
+  apiKey: process.env.PINECONE_API_KEY,
 })
 
-const index = pc.index('task-vector')
+const index = pc.index('task-vectors')
 
-// Initialize the embedding model (1024 dimensions)
-let embedder = null
 
-async function getEmbedder() {
-  if (!embedder) {
-    console.log('Loading 1024D embedder...')
-    embedder = await pipeline('feature-extraction', 'Xenova/e5-large-v2')
-    console.log('1024D Embedder loaded successfully')
-  }
-  return embedder
+async function embed(text) {
+  const response = await openai.embeddings.create({
+    model: 'text-embedding-3-small',
+    input: text,
+    encoding_format: 'float', // makes sure we get normal JS numbers
+  });
+
+  // response.data[0].embedding is already number[]
+  return response.data[0].embedding;
 }
-
 // Generate embedding for task content
 async function generateTaskEmbedding(task) {
-  try {
-    const model = await getEmbedder()
-    
+  try {    
     // Combine relevant task fields for embedding
     const taskText = [
       task.title || '',
@@ -45,13 +49,8 @@ async function generateTaskEmbedding(task) {
     if (!taskText.trim()) {
       throw new Error('No text content available for embedding')
     }
-    
-    const output = await model(taskText, { pooling: 'mean', normalize: true })
-    const embedding = Array.from(output.data)
-    
-    if (embedding.length !== 1024) {
-      throw new Error(`Expected 1024 dimensions, got ${embedding.length}`)
-    }
+
+    const embedding = await embed(taskText);    
     
     return embedding
   } catch (error) {
@@ -64,7 +63,7 @@ async function generateTaskEmbedding(task) {
 async function upsertTaskToPinecone(task) {
   try {
     const embedding = await generateTaskEmbedding(task)
-    
+    console.log(embedding)
     console.log(task.projectId)
     const vector = {
       id: task._id.toString(),

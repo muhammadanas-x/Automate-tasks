@@ -2,34 +2,27 @@
 import { NextResponse } from 'next/server'
 import { Pinecone } from '@pinecone-database/pinecone'
 import jwt from 'jsonwebtoken'
-
-
-
-import { pipeline } from '@xenova/transformers'
+import OpenAI from 'openai'
 
 
 const pc = new Pinecone({
   apiKey: process.env.PINECONE_API_KEY,
+
 })
 
-const index = pc.index('task-vector')
+const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY ,   baseURL: 'https://api.aimlapi.com/v1',})
+const index = pc.index('task-vectors')
 
-// Initialize the embedding model (1024 dimensions)
-let embedder = null
 
-async function getEmbedder() {
-  if (!embedder) {
-    console.log('Loading 1024D embedder for Vercel...')
-    try {
-      // Using e5-large-v2 (1024 dimensions) to match your index
-      embedder = await pipeline('feature-extraction', 'Xenova/e5-large-v2')
-      console.log('1024D Embedder loaded successfully on Vercel')
-    } catch (error) {
-      console.error('Error loading embedder on Vercel:', error)
-      throw error
-    }
-  }
-  return embedder
+async function embed(text) {
+  const response = await openai.embeddings.create({
+    model: 'text-embedding-3-small',
+    input: text,
+    encoding_format: 'float', // makes sure we get normal JS numbers
+  });
+
+  // response.data[0].embedding is already number[]
+  return response.data[0].embedding;
 }
 
 export async function GET(req, { params }) {
@@ -63,24 +56,13 @@ export async function GET(req, { params }) {
     if (!query) {
       return NextResponse.json({ error: 'Query parameter required' }, { status: 400 })
     }
-    
-    // Get the 1024D embedder
-    const model = await getEmbedder()
-    
-    // Generate 1024D embedding
-    const output = await model(query, { pooling: 'mean', normalize: true })
-    const queryVector = Array.from(output.data)
+    const queryVector = await embed(query)
     
     console.log('Embedding result shape:', queryVector.length)
     
-    // Verify we have 1024 dimensions
-    if (queryVector.length !== 1024) {
-      throw new Error(`Expected 1024 dimensions, got ${queryVector.length}`)
-    }
 
     console.log('Querying Pinecone index...')
     
-    // Search with projectId filter to only return tasks belonging to the specified project
     const searchResults = await index.query({
       vector: queryVector,
       topK: topK,
@@ -91,39 +73,20 @@ export async function GET(req, { params }) {
       }
     })
 
+
+    searchResults.matches.map((match) => console.log(match.metadata))
+
     console.log('Search completed successfully')
     console.log('Results found:', searchResults.matches?.length || 0)
 
-    // Filter results by minimum score if specified
-    const filteredResults = searchResults.matches?.filter(match => 
-      match.score >= minScore
-    ) || []
 
-    // Enhance results with formatted metadata
-    const enhancedResults = filteredResults.map(match => ({
-      id: match.id,
-      score: match.score,
-      task: {
-        id: match.id,
-        title: match.metadata?.title || '',
-        description: match.metadata?.description || '',
-        category: match.metadata?.category || '',
-        priority: match.metadata?.priority || '',
-        status: match.metadata?.status || '',
-        taskStatus: match.metadata?.taskStatus || '',
-        assignee: match.metadata?.assignee || '',
-        projectId: match.metadata?.projectId || null,
-        createdAt: match.metadata?.createdAt || null,
-        updatedAt: match.metadata?.updatedAt || null
-      }
-    }))
-
+    
     return NextResponse.json({
       success: true,
       query,
       projectId,
-      results: enhancedResults,
-      count: enhancedResults.length,
+      tasks: searchResults,
+      count: searchResults.length,
       totalFound: searchResults.matches?.length || 0,
       minScore
     })
