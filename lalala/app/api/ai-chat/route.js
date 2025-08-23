@@ -54,7 +54,6 @@ async function performRAGSearch(query, request, projectId) {
       },
     })
 
-    console.log("hi")
 
     console.log(response)
     
@@ -107,6 +106,8 @@ export async function POST(request) {
         // Perform RAG search with authentication and projectId
         const ragResult = await performRAGSearch(message, request, projectId)
         
+
+        console.log(ragResult)
         if (!ragResult) {
           return NextResponse.json({
             message: "I couldn't find any tasks matching your query. Would you like to create a new task instead?",

@@ -3,12 +3,17 @@ import { NextResponse } from 'next/server'
 import { Pinecone } from '@pinecone-database/pinecone'
 import { pipeline } from '@xenova/transformers'
 import jwt from 'jsonwebtoken'
+import OpenAI from 'openai'
 
 const pc = new Pinecone({
   apiKey: process.env.PINECONE_API_KEY,
 })
 
 const index = pc.index('task-vector')
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+})
+
 
 // Initialize the embedding model (1024 dimensions)
 let embedder = null
