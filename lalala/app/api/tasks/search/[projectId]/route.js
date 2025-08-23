@@ -87,43 +87,46 @@ export async function GET(req, { params }) {
       includeMetadata: true,
       includeValues: false,
       filter: {
-        projectId: projectId
+        projectId: projectId,
+        
       }
     })
 
-    console.log('Search completed successfully')
-    console.log('Results found:', searchResults.matches?.length || 0)
+    // searchResults.matches.map((match) => console.log(match.metadata))
+    // console.log('Search completed successfully')
+    // console.log('Results found:', searchResults.matches?.length || 0)
 
     // Filter results by minimum score if specified
     const filteredResults = searchResults.matches?.filter(match => 
       match.score >= minScore
     ) || []
 
+    console.log(filteredResults)
     // Enhance results with formatted metadata
-    const enhancedResults = filteredResults.map(match => ({
-      id: match.id,
-      score: match.score,
-      task: {
-        id: match.id,
-        title: match.metadata?.title || '',
-        description: match.metadata?.description || '',
-        category: match.metadata?.category || '',
-        priority: match.metadata?.priority || '',
-        status: match.metadata?.status || '',
-        taskStatus: match.metadata?.taskStatus || '',
-        assignee: match.metadata?.assignee || '',
-        projectId: match.metadata?.projectId || null,
-        createdAt: match.metadata?.createdAt || null,
-        updatedAt: match.metadata?.updatedAt || null
-      }
-    }))
+    // const enhancedResults = filteredResults.map(match => ({
+    //   id: match.id,
+    //   score: match.score,
+    //   task: {
+    //     id: match.id,
+    //     title: match.metadata?.title || '',
+    //     description: match.metadata?.description || '',
+    //     category: match.metadata?.category || '',
+    //     priority: match.metadata?.priority || '',
+    //     status: match.metadata?.status || '',
+    //     taskStatus: match.metadata?.taskStatus || '',
+    //     assignee: match.metadata?.assignee || '',
+    //     projectId: match.metadata?.projectId || null,
+    //     createdAt: match.metadata?.createdAt || null,
+    //     updatedAt: match.metadata?.updatedAt || null
+    //   }
+    // }))
 
     return NextResponse.json({
       success: true,
       query,
       projectId,
-      results: enhancedResults,
-      count: enhancedResults.length,
+      tasks: filteredResults,
+      count: filteredResults.length,
       totalFound: searchResults.matches?.length || 0,
       minScore
     })

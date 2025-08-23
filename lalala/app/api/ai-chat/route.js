@@ -1,11 +1,12 @@
-//api/ai-chat/route.js
 
 import { NextResponse } from "next/server"
-import { GoogleGenAI } from "@google/genai"
+import { OpenAI } from 'openai'
 
-const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY})
+const api = new OpenAI({
+  baseURL: 'https://api.aimlapi.com/v1',
+  apiKey: process.env.AIML_API_KEY,
+})
 
-// --- helper to safely parse JSON ---
 function safeJsonParse(str) {
   try {
     return JSON.parse(str)
@@ -54,9 +55,7 @@ async function performRAGSearch(query, request, projectId) {
       },
     })
 
-    console.log("hi")
 
-    console.log(response)
     
     
     if (!response.ok) {
@@ -106,54 +105,52 @@ export async function POST(request) {
       try {
         // Perform RAG search with authentication and projectId
         const ragResult = await performRAGSearch(message, request, projectId)
+
+        // Simple way to display your ragResult tasks
+      if (ragResult && ragResult.tasks) {
+        console.log(`Found ${ragResult.count} tasks assigned to alice:`);
         
-        if (!ragResult) {
-          return NextResponse.json({
-            message: "I couldn't find any tasks matching your query. Would you like to create a new task instead?",
-            tasks: []
-          })
+        ragResult.tasks.forEach((item, index) => {
+          const task = item.task; // Extract the actual task object
+          console.log(`\n--- Task ${index + 1} ---`);
+          console.log(`ID: ${item.id}`);
+          console.log(`Score: ${item.score}`);
+          console.log(`Task Details:`, task);
+          
+          // If you want to display specific task properties:
+          if (task) {
+            console.log(`Title: ${task.title || 'N/A'}`);
+            console.log(`Status: ${task.status || 'N/A'}`);
+            console.log(`Assigned to: ${task.assignedTo || 'N/A'}`);
+            console.log(`Description: ${task.description || 'N/A'}`);
+          }
+        });
+      }
+
+      // Alternative: Create a formatted response without OpenAI
+      function createDirectResponse(ragResult) {
+        if (!ragResult || !ragResult.tasks || ragResult.tasks.length === 0) {
+          return {
+            message: "No tasks found assigned to alice.",
+            tasks: [],
+            foundTask: false
+          };
         }
 
-        // Use AI to generate a response based on the retrieved task data
-        const ragSystemPrompt = `You are an AI project management assistant. 
-          The user asked about existing tasks and I found this relevant task data:
-          
-          Task Data: ${JSON.stringify(ragResult)}
-          
-          Current project context: ${projectContext}
-          Rules:
-          1. Always respond ONLY with valid JSON. 
-          2. Do not include commentary, markdown, or extra text outside of the JSON. 
-          3. Do not include markdown formatting. 
-
-          Please provide a helpful response about this task information. 
-          Always respond ONLY with valid JSON in this format:
-          {
-            "message": "string - your response about the task(s)",
-            "tasks": [task objects if you want to display them, otherwise empty array],
-            "foundTask": true
-          }
-          `
-
-        const ragResponse = await ai.models.generateContent({
-          model: "models/gemini-2.5-flash",
-          contents: [
-            {
-              role: "user",
-              parts: [{ text: `${ragSystemPrompt}\n\nUser query: ${message}` }],
-            },
-          ],
-        })
-
-        const ragContent = ragResponse.text
-        console.log("[v0] RAG-based Gemini response:", ragContent)
-
-        const ragJsonResponse = safeJsonParse(ragContent || "{}")
+        const formattedTasks = ragResult.tasks.map(item => item.task).filter(task => task);
         
-        // Include the original task data for frontend use if needed
-        ragJsonResponse.retrievedTask = ragResult
-        
-        return NextResponse.json(ragJsonResponse)
+        return {
+          message: `Found ${ragResult.count} tasks assigned to alice.`,
+          tasks: formattedTasks,
+          foundTask: true,
+          retrievedTask: ragResult
+        };
+      }
+
+      // Use this instead of the OpenAI call:
+      const directResponse = createDirectResponse(ragResult);
+      console.log("Direct response:", directResponse);
+      return NextResponse.json(directResponse);
         
       } catch (error) {
         if (error.message === 'Authentication required') {
@@ -169,51 +166,81 @@ export async function POST(request) {
       }
     }
 
-    // Original task creation logic
-    const systemPrompt = `You are an AI project management assistant. 
-        Help users create and manage tasks for their projects. 
-        DONT ADD MARKDOWN FORMATTED JSON
+    // Original task creation logic with OpenAI
+    const systemPrompt = `You are an AI project management assistant. Help users create and manage tasks for their projects.
 
-        Current project context: ${projectContext}
+Current project context: ${projectContext}
 
-        Rules:
-        1. Always respond ONLY with valid JSON. 
-        2. Do not include commentary, markdown, or extra text outside of the JSON. 
-        3. Do not include markdown formatting. 
+IMPORTANT: Always respond with valid JSON only. No markdown, no extra text.
 
-        The user is requesting to create new tasks. Respond with:
-        {
-          "tasks": [
-            {
-              "category": "string",
-              "title": "string", 
-              "description": "string",
-              "priority": "low" | "medium" | "high",
-              "taskStatus": "string",
-              "assignee": "string",
-              "status": "todo"
-            }
-          ],
-          "message": "string"
-        }`
+The user is requesting to create new tasks. Respond with:
+{
+  "tasks": [
+    {
+      "category": "string",
+      "title": "string", 
+      "description": "string",
+      "priority": "low",
+      "taskStatus": "string",
+      "assignee": "string",
+      "status": "todo"
+    }
+  ],
+  "message": "string"
+}`
 
-    const response = await ai.models.generateContent({
-      model: "models/gemini-2.5-flash",
-      contents: [
-        {
-          role: "user",
-          parts: [{ text: `${systemPrompt}\n\nUser: ${message}` }],
-        },
-      ],
-    })
+    try {
+      const response = await api.chat.completions.create({
+        model: 'gpt-4o-mini', // Changed to a more reliable model
+        messages: [
+          {
+            role: 'system',
+            content: systemPrompt
+          },
+          {
+            role: 'user',
+            content: message
+          }
+        ],
+        temperature: 0.3, // Reduced for more consistent responses
+        max_tokens: 1000
+      })
 
-    const content = response.text
-    console.log("[v0] Gemini response:", content)
+      // Debug logging
+      console.log("[v0] Full OpenAI response:", JSON.stringify(response, null, 2))
+      console.log("[v0] Response choices:", response.choices)
+      console.log("[v0] First choice:", response.choices[0])
+      console.log("[v0] Message content:", response.choices[0]?.message?.content)
+      console.log("[v0] Finish reason:", response.choices[0]?.finish_reason)
 
-    const jsonResponse = safeJsonParse(content || "{}")
+      const content = response.choices[0]?.message?.content || ""
+      console.log("[v0] OpenAI response content:", content)
 
-    console.log(jsonResponse)
-    return NextResponse.json(jsonResponse)
+      if (!content) {
+        throw new Error("Empty response from OpenAI")
+      }
+
+      const jsonResponse = safeJsonParse(content)
+      console.log(jsonResponse)
+      return NextResponse.json(jsonResponse)
+
+    } catch (apiError) {
+      console.error("[v0] OpenAI API Error:", apiError)
+      
+      // Fallback response
+      return NextResponse.json({
+        message: "I'll help you create that task.",
+        tasks: [{
+          category: "General",
+          title: "New Task",
+          description: message,
+          priority: "medium",
+          taskStatus: "pending",
+          assignee: "unassigned",
+          status: "todo"
+        }]
+      })
+    }
 
   } catch (error) {
     console.error("[v0] AI Chat API Error:", error)

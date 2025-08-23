@@ -66,6 +66,7 @@ export async function GET(req) {
     console.log('Querying Pinecone index...')
     
     console.log(decoded.userId)
+    console.log(queryVector)
     // Search with user filter to only return tasks belonging to the authenticated user
     const searchResults = await index.query({
       vector: queryVector,
