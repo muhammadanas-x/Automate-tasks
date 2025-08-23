@@ -5,7 +5,6 @@ import Task from "@/models/Task"
 import Project from "@/models/Project"
 import jwt from "jsonwebtoken"
 import { Pinecone } from '@pinecone-database/pinecone'
-import { pipeline } from '@xenova/transformers'
 
 
 import OpenAI from 'openai';
