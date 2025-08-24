@@ -91,7 +91,7 @@ export function AiChatSidebar({ projectId }) {
         },
         body: JSON.stringify({
           message: content,
-          projectContext: `${currentProject?.name || "New Project"} `,
+          projectContext: `${currentProject?.name || "New Project"}: Already Implemented ${projectContext.tasks} `,
           projectId: currentProject._id,
         }),
       })
@@ -241,7 +241,7 @@ export function AiChatSidebar({ projectId }) {
             <div className="space-y-2">
               {quickPrompts.map((prompt, index) => (
                 <Button
-                  key={index}
+                  key={`quick-prompt-${index}`}
                   variant="ghost"
                   className="w-full text-left text-xs p-3 h-auto whitespace-normal justify-start hover:bg-gradient-to-r hover:from-violet-100/80 hover:via-purple-100/60 hover:to-pink-100/40 rounded-xl transition-all duration-500 text-gray-700 hover:text-gray-900 backdrop-blur-sm bg-white/10 border border-white/20 shadow-lg hover:shadow-xl hover:shadow-purple-500/20 animate-fade-in-up"
                   style={{ animationDelay: `${0.6 + index * 0.1}s` }}
@@ -290,8 +290,8 @@ export function AiChatSidebar({ projectId }) {
                     {/* task list (only if AI and tasks exist) */}
                     {message.sender === "ai" && message.tasks?.length > 0 && (
                       <ul className="mt-2 space-y-1 text-xs list-disc list-inside font-medium">
-                        {message.tasks.map((task) => (
-                          <li key={task.id}>{task.title}</li>
+                        {message.tasks.map((task, taskIndex) => (
+                          <li key={task.id || `task-${taskIndex}`}>{task.title}</li>
                         ))}
                       </ul>
                     )}
