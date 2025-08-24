@@ -23,7 +23,7 @@ const openai = new OpenAI({
 
 async function embed(text) {
   const response = await openai.embeddings.create({
-    model: 'text-embedding-3-small',
+    model: 'text-embedding-3-large',
     input: text,
     encoding_format: 'float', // makes sure we get normal JS numbers
   });

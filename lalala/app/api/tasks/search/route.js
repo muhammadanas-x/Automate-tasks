@@ -10,23 +10,22 @@ const pc = new Pinecone({
 })
 
 const index = pc.index('task-vector')
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-})
-
-
 // Initialize the embedding model (1024 dimensions)
-let embedder = null
 
-async function getEmbedder() {
-  if (!embedder) {
-    console.log('Loading 1024D embedder...')
-    // Using e5-large-v2 (1024 dimensions) to match your index
-    embedder = await pipeline('feature-extraction', 'Xenova/e5-large-v2')
-    console.log('1024D Embedder loaded successfully')
-  }
-  return embedder
+
+const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY ,   baseURL: 'https://api.aimlapi.com/v1',})
+
+async function embed(text) {
+  const response = await openai.embeddings.create({
+    model: 'text-embedding-3-large',
+    input: text,
+    encoding_format: 'float', // makes sure we get normal JS numbers
+  });
+
+  // response.data[0].embedding is already number[]
+  return response.data[0].embedding;
 }
+
 
 export async function GET(req) {
   try {
@@ -55,25 +54,19 @@ export async function GET(req) {
     console.log('User ID:', decoded.userId)
     
     // Get the 1024D embedder
-    const model = await getEmbedder()
     
     // Generate 1024D embedding
-    const output = await model(query, { pooling: 'mean', normalize: true })
-    const queryVector = Array.from(output.data)
+    const output = await embed(query)
     
     console.log('Embedding result shape:', queryVector.length)
     
-    // Verify we have 1024 dimensions
-    if (queryVector.length !== 1024) {
-      throw new Error(`Expected 1024 dimensions, got ${queryVector.length}`)
-    }
 
     console.log('Querying Pinecone index...')
     
     console.log(decoded.userId)
     // Search with user filter to only return tasks belonging to the authenticated user
     const searchResults = await index.query({
-      vector: queryVector,
+      vector: output,
       topK: topK,
       includeMetadata: true,
       includeValues: false,
