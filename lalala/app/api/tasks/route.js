@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { Pinecone } from '@pinecone-database/pinecone';
-import { pipeline } from '@xenova/transformers';
 import { v4 as uuidv4 } from 'uuid';
+import OpenAI from 'openai';
 
 const pc = new Pinecone({
   apiKey: process.env.PINECONE_API_KEY,
@@ -10,17 +10,17 @@ const pc = new Pinecone({
 // Use your existing index name
 const index = pc.index('task-vectors');
 
-// Initialize the embedding model (this will be cached after first use)
-let embedder = null;
+const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY ,   baseURL: 'https://api.aimlapi.com/v1',})
 
-async function getEmbedder() {
-  if (!embedder) {
-    console.log('Loading 1024D embedder...');
-    // Using e5-large-v2 (1024 dimensions) to match your index
-    embedder = await pipeline('feature-extraction', 'Xenova/e5-large-v2');
-    console.log('1024D Embedder loaded successfully');
-  }
-  return embedder;
+async function embed(text) {
+  const response = await openai.embeddings.create({
+    model: 'text-embedding-3-small',
+    input: text,
+    encoding_format: 'float', // makes sure we get normal JS numbers
+  });
+
+  // response.data[0].embedding is already number[]
+  return response.data[0].embedding;
 }
 
 export async function POST(req) {
@@ -30,7 +30,6 @@ export async function POST(req) {
     // ensure we always have an array
     const taskArray = Array.isArray(tasks) ? tasks : [tasks];
 
-    const model = await getEmbedder();
     const vectors = [];
 
     for (const task of taskArray) {
@@ -41,14 +40,12 @@ export async function POST(req) {
       const text = `${task.title || ''} ${task.description || ''} ${task.taskStatus || ''}`.trim();
       
       // Generate embeddings using the transformer model
-      const output = await model(text, { pooling: 'mean', normalize: true });
+      const output = await embed(text);
       
-      // Extract the embedding vector (1024 dimensions for e5-large-v2)
-      const embedding = Array.from(output.data);
 
       vectors.push({
         id,
-        values: embedding, // No padding needed - use native 384 dimensions
+        values: output, // No padding needed - use native 384 dimensions
         metadata: { 
           ...task, 
           id,
