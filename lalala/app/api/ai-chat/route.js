@@ -140,7 +140,7 @@ export async function POST(request) {
           `
 
         const ragResponse = await openai.chat.completions.create({
-          model: 'openai/gpt-4o',
+          model: 'openai/gpt-5-2025-08-07',
           messages: [
             {
               role: 'system',
@@ -208,7 +208,7 @@ export async function POST(request) {
         }`
 
     const response = await openai.chat.completions.create({
-      model: 'openai/gpt-4o',
+      model: 'openai/gpt-5-2025-08-07',
       messages: [
         {
           role: 'system',
