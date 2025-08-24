@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Plus, Home, Settings, MoreHorizontal, LogOut, Users, Mail, UserPlus } from "lucide-react"
 import Link from "next/link"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -14,7 +14,7 @@ import { useProject } from "@/contexts/project-context"
 import { useAuth } from "@/hooks/useAuth"
 
 export function ProjectSidebar({ currentProjectId }) {
-  const { projects, createProject, deleteProject, loading } = useProject()
+  const { projects, createProject, deleteProject, loading, error, refetchProjects } = useProject()
   const { user, logout } = useAuth()
 
   // New project state
@@ -30,8 +30,36 @@ export function ProjectSidebar({ currentProjectId }) {
   const [isAddingMember, setIsAddingMember] = useState(false)
   const [addMemberError, setAddMemberError] = useState("")
 
-  // Get current project for adding members
-  const currentProject = projects?.find((p) => p._id === currentProjectId)
+  // Retry mechanism
+  const [retryCount, setRetryCount] = useState(0)
+  const [isRetrying, setIsRetrying] = useState(false)
+
+  // Get current project for adding members - safely handle undefined projects
+  const currentProject = projects?.find((p) => p._id === currentProjectId) || null
+
+  // Safe project count
+  const projectCount = projects?.length ?? 0
+
+  // Retry loading projects if there's an error
+  useEffect(() => {
+    if (error && retryCount < 3) {
+      const timer = setTimeout(() => {
+        setIsRetrying(true)
+        setRetryCount(prev => prev + 1)
+        refetchProjects?.()
+          .finally(() => setIsRetrying(false))
+      }, 1000 * Math.pow(2, retryCount)) // Exponential backoff
+      
+      return () => clearTimeout(timer)
+    }
+  }, [error, retryCount, refetchProjects])
+
+  // Reset retry count on successful load
+  useEffect(() => {
+    if (projects && !loading && !error) {
+      setRetryCount(0)
+    }
+  }, [projects, loading, error])
 
   const handleCreateProject = async () => {
     if (!newProjectName.trim()) return
@@ -48,17 +76,21 @@ export function ProjectSidebar({ currentProjectId }) {
       setIsNewProjectOpen(false)
     } catch (error) {
       console.error("Error creating project:", error)
+      // You might want to show a toast/notification here
     } finally {
       setIsCreating(false)
     }
   }
 
   const handleDeleteProject = async (projectId) => {
+    if (!projectId) return
+    
     if (window.confirm("Are you sure you want to delete this project? This will also delete all associated tasks.")) {
       try {
         await deleteProject(projectId)
       } catch (error) {
         console.error("Error deleting project:", error)
+        // You might want to show a toast/notification here
       }
     }
   }
@@ -92,8 +124,10 @@ export function ProjectSidebar({ currentProjectId }) {
       setMemberRole("editor")
       setIsAddPeopleOpen(false)
 
-      // You might want to refresh the project data here
-      // or update the project context with the new member
+      // Refetch projects to update member list
+      if (refetchProjects) {
+        refetchProjects()
+      }
     } catch (error) {
       setAddMemberError(error.message)
     } finally {
@@ -105,8 +139,15 @@ export function ProjectSidebar({ currentProjectId }) {
     logout()
   }
 
+  const handleRetry = () => {
+    setIsRetrying(true)
+    setRetryCount(0)
+    refetchProjects?.()
+      .finally(() => setIsRetrying(false))
+  }
+
   // Show loading state
-  if (loading) {
+  if (loading || isRetrying) {
     return (
       <div className="flex flex-col h-full p-4 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-violet-50 via-white to-purple-50/30">
@@ -141,6 +182,51 @@ export function ProjectSidebar({ currentProjectId }) {
                 </div>
               ))}
             </div>
+            <div className="text-center text-sm text-gray-500 mt-4">
+              {isRetrying ? "Retrying..." : "Loading projects..."}
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Show error state with retry option
+  if (error && !projects) {
+    return (
+      <div className="flex flex-col h-full p-4 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-violet-50 via-white to-purple-50/30">
+          <div className="absolute top-10 left-10 w-32 h-32 bg-gradient-to-br from-red-400/20 to-orange-500/20 rounded-full blur-xl"></div>
+        </div>
+
+        <div className="relative z-10">
+          <div className="flex items-center gap-2 mb-8">
+            <div className="w-8 h-8 bg-gradient-to-r from-violet-600 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
+              <div className="w-4 h-4 bg-white rounded-sm" />
+            </div>
+            <span className="font-semibold bg-gradient-to-r from-violet-900 to-purple-600 bg-clip-text text-transparent">
+              TrelloAI
+            </span>
+          </div>
+          
+          <div className="text-center py-8 backdrop-blur-sm bg-white/20 rounded-xl border border-white/30">
+            <div className="text-red-500 text-sm mb-2 font-medium">Failed to load projects</div>
+            <div className="text-xs text-gray-600 mb-4">
+              {error.message || "Something went wrong"}
+            </div>
+            <Button
+              onClick={handleRetry}
+              disabled={isRetrying}
+              size="sm"
+              className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+            >
+              {isRetrying ? "Retrying..." : "Try Again"}
+            </Button>
+            {retryCount > 0 && (
+              <div className="text-xs text-gray-500 mt-2">
+                Retry attempt {retryCount}/3
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -205,75 +291,75 @@ export function ProjectSidebar({ currentProjectId }) {
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider">PROJECTS</h3>
             <span className="text-xs text-gray-400 bg-white/30 px-2 py-1 rounded-full backdrop-blur-sm">
-              {projects?.length || 0}
+              {projectCount}
             </span>
           </div>
           <div className="space-y-1">
-            {projects?.map((project, index) => (
-              <div
-                key={project._id}
-                className="group relative animate-fade-in-left"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <Link href={`/projects/${project._id}`}>
-                  <div
-                    className={`flex items-center gap-3 p-3 rounded-xl text-sm transition-all duration-300 hover:shadow-lg hover:scale-[1.02] backdrop-blur-sm ${
-                      currentProjectId === project._id
-                        ? "bg-gradient-to-r from-violet-100/80 to-purple-100/80 border border-violet-200/50 shadow-md"
-                        : "hover:bg-gradient-to-r hover:from-white/60 hover:to-violet-50/60 bg-white/30 border border-white/20"
-                    }`}
-                  >
-                    <div className="w-8 h-8 bg-gradient-to-br from-violet-200 to-purple-200 text-violet-700 rounded-lg flex items-center justify-center text-xs font-semibold shadow-sm hover:shadow-md transition-all duration-300">
-                      {project.name.substring(0, 3).toUpperCase()}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="truncate font-medium bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-                        {project.name}
-                      </div>
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
-                        <span className="bg-violet-100/50 px-2 py-0.5 rounded-full">
-                          {project.taskCount || 0} tasks
-                        </span>
-                        {project.members && project.members.length > 0 && (
-                          <>
-                            <span>•</span>
-                            <div className="flex items-center gap-1 bg-purple-100/50 px-2 py-0.5 rounded-full">
-                              <Users className="w-3 h-3" />
-                              <span>{project.members.length}</span>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-all duration-300 w-6 h-6 hover:bg-white/80 backdrop-blur-sm"
+            {projects && projects.length > 0 ? (
+              projects.map((project, index) => (
+                <div
+                  key={project._id}
+                  className="group relative animate-fade-in-left"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  <Link href={`/projects/${project._id}`}>
+                    <div
+                      className={`flex items-center gap-3 p-3 rounded-xl text-sm transition-all duration-300 hover:shadow-lg hover:scale-[1.02] backdrop-blur-sm ${
+                        currentProjectId === project._id
+                          ? "bg-gradient-to-r from-violet-100/80 to-purple-100/80 border border-violet-200/50 shadow-md"
+                          : "hover:bg-gradient-to-r hover:from-white/60 hover:to-violet-50/60 bg-white/30 border border-white/20"
+                      }`}
                     >
-                      <MoreHorizontal className="w-3 h-3" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="backdrop-blur-md bg-white/90 border-white/30 shadow-xl">
-                    <DropdownMenuItem className="hover:bg-violet-50">Edit Project</DropdownMenuItem>
-                    <DropdownMenuItem className="hover:bg-violet-50">Duplicate</DropdownMenuItem>
-                    <DropdownMenuItem
-                      className="text-red-600 hover:bg-red-50"
-                      onClick={() => handleDeleteProject(project._id)}
-                    >
-                      Delete Project
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            ))}
+                      <div className="w-8 h-8 bg-gradient-to-br from-violet-200 to-purple-200 text-violet-700 rounded-lg flex items-center justify-center text-xs font-semibold shadow-sm hover:shadow-md transition-all duration-300">
+                        {project.name ? project.name.substring(0, 3).toUpperCase() : "PRJ"}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="truncate font-medium bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                          {project.name || "Untitled Project"}
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                          <span className="bg-violet-100/50 px-2 py-0.5 rounded-full">
+                            {project.taskCount || 0} tasks
+                          </span>
+                          {project.members && project.members.length > 0 && (
+                            <>
+                              <span>•</span>
+                              <div className="flex items-center gap-1 bg-purple-100/50 px-2 py-0.5 rounded-full">
+                                <Users className="w-3 h-3" />
+                                <span>{project.members.length}</span>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
 
-            {/* Empty state */}
-            {projects?.length === 0 && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-all duration-300 w-6 h-6 hover:bg-white/80 backdrop-blur-sm"
+                      >
+                        <MoreHorizontal className="w-3 h-3" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="backdrop-blur-md bg-white/90 border-white/30 shadow-xl">
+                      <DropdownMenuItem className="hover:bg-violet-50">Edit Project</DropdownMenuItem>
+                      <DropdownMenuItem className="hover:bg-violet-50">Duplicate</DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="text-red-600 hover:bg-red-50"
+                        onClick={() => handleDeleteProject(project._id)}
+                      >
+                        Delete Project
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              ))
+            ) : (
+              /* Empty state */
               <div className="text-center py-8 text-gray-500 backdrop-blur-sm bg-white/20 rounded-xl border border-white/30 animate-fade-in">
                 <div className="text-sm mb-2 bg-gradient-to-r from-gray-600 to-gray-500 bg-clip-text text-transparent">
                   No projects yet
@@ -311,6 +397,11 @@ export function ProjectSidebar({ currentProjectId }) {
                       placeholder="Enter project name..."
                       className="bg-white/70 border-violet-200 focus:border-violet-500 focus:ring-violet-500/20 backdrop-blur-sm"
                       disabled={isCreating}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && newProjectName.trim()) {
+                          handleCreateProject()
+                        }
+                      }}
                     />
                   </div>
                   <div>
@@ -329,7 +420,11 @@ export function ProjectSidebar({ currentProjectId }) {
                   <div className="flex justify-end gap-2">
                     <Button
                       variant="outline"
-                      onClick={() => setIsNewProjectOpen(false)}
+                      onClick={() => {
+                        setIsNewProjectOpen(false)
+                        setNewProjectName("")
+                        setNewProjectDescription("")
+                      }}
                       className="border-gray-200 hover:bg-gray-50 backdrop-blur-sm"
                       disabled={isCreating}
                     >
@@ -400,6 +495,11 @@ export function ProjectSidebar({ currentProjectId }) {
                     placeholder="Enter email address..."
                     className="bg-white/70 border-violet-200 focus:border-violet-500 focus:ring-violet-500/20 backdrop-blur-sm"
                     disabled={isAddingMember}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && memberEmail.trim()) {
+                        handleAddMember()
+                      }
+                    }}
                   />
                 </div>
 
@@ -447,7 +547,7 @@ export function ProjectSidebar({ currentProjectId }) {
                     <div className="mt-2 space-y-2 max-h-32 overflow-y-auto">
                       {currentProject.members.map((member, index) => (
                         <div
-                          key={index}
+                          key={member.email || index}
                           className="flex items-center justify-between bg-white/50 backdrop-blur-sm p-2 rounded-lg text-sm border border-white/30"
                         >
                           <div>
