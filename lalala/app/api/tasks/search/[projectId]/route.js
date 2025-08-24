@@ -45,7 +45,7 @@ export async function GET(req, { params }) {
     const { searchParams } = new URL(req.url)
     const query = searchParams.get('query')
     const topK = parseInt(searchParams.get('topK') || '10')
-    const minScore = parseFloat(searchParams.get('minScore') || '0.7')
+    const minScore = parseFloat(searchParams.get('minScore') || '0.4')
 
     console.log('Search query:', query)
     console.log('Project ID:', projectId)
