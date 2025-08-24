@@ -10,9 +10,9 @@ const pc = new Pinecone({
 
 })
 
-const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY ,   baseURL: 'https://api.aimlapi.com/v1',})
 const index = pc.index('task-vectors')
 
+const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY ,   baseURL: 'https://api.aimlapi.com/v1',})
 
 async function embed(text) {
   const response = await openai.embeddings.create({
@@ -45,7 +45,7 @@ export async function GET(req, { params }) {
     const { searchParams } = new URL(req.url)
     const query = searchParams.get('query')
     const topK = parseInt(searchParams.get('topK') || '10')
-    const minScore = parseFloat(searchParams.get('minScore') || '0.4')
+    const minScore = parseFloat(searchParams.get('minScore') || '0.2')
 
     console.log('Search query:', query)
     console.log('Project ID:', projectId)
