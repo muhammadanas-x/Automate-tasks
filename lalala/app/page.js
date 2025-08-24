@@ -15,13 +15,6 @@ export default function Home() {
     setIsLoaded(true)
   }, [])
 
-  const handleLogin = () => {
-    router.push("/login")
-  }
-
-  const handleSignup = () => {
-    router.push("/signup")
-  }
 
   return (
     <div className="min-h-screen relative overflow-hidden">
