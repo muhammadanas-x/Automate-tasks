@@ -24,8 +24,7 @@ Our solution? A **conversational, AI-powered task management system** where you 
 ---
 
 ## 👥 Contributors
-<table> <tr> <td align="center"> <a href="https://github.com/muhammadanas-x"> <img src="https://avatars.githubusercontent.com/u/111079610?v=4" width="110" height="110" style="border-radius: 50%;" alt="Muhammad Anas avatar"/> <br /> <sub><b>Muhammad Anas</b></sub> </a> <br /> <sub>@muhammadanas-x</sub> <br /> 💡 Creator & Lead Developer </td> </tr> </table>
-<table> <tr> <td align="center"> <a href="https://github.com/arefham"> <img src="https://avatars.githubusercontent.com/u/56312801?v=4" width="110" height="110" style="border-radius: 50%;" alt="Aref Ham avatar"/> <br /> <sub><b>Aref Hammadi</b></sub> </a> <br /> <sub>@arefham</sub> <br /> 💡 AI Engineer </td> </tr> </table>
+<table> <tr> <td align="center"> <a href="https://github.com/muhammadanas-x"> <img src="https://avatars.githubusercontent.com/u/111079610?v=4" width="110" height="110" style="border-radius: 50%;" alt="Muhammad Anas avatar"/> <br /> <sub><b>Muhammad Anas</b></sub> </a> <br /> <sub>@muhammadanas-x</sub> <br /> 💡 Creator & Lead Developer </td> </tr> </table> <table> <tr> <td align="center"> <a href="https://github.com/arefham"> <img src="https://avatars.githubusercontent.com/u/56312801?v=4" width="110" height="110" style="border-radius: 50%;" alt="Aref Ham avatar"/> <br /> <sub><b>Aref Hammadi</b></sub> </a> <br /> <sub>@arefham</sub> <br /> 💡 AI Engineer </td> </tr> </table>
 
 ## 🏗️ Tech Stack
 
