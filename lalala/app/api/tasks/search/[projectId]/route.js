@@ -81,6 +81,7 @@ export async function GET(req, { params }) {
 
 
     
+    console.log(searchResults.matches)
     return NextResponse.json({
       success: true,
       query,
