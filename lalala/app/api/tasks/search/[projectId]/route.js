@@ -86,7 +86,7 @@ export async function GET(req, { params }) {
       success: true,
       query,
       projectId,
-      tasks: searchResults,
+      tasks: searchResults.matches,
       count: searchResults.length,
       totalFound: searchResults.matches?.length || 0,
       minScore
