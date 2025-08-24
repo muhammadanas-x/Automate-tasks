@@ -91,7 +91,7 @@ export function AiChatSidebar({ projectId }) {
         },
         body: JSON.stringify({
           message: content,
-          projectContext: `${currentProject?.name || "New Project"}: Already Implemented ${projectContext.tasks} `,
+          projectContext: `${currentProject?.name || "New Project"} `,
           projectId: currentProject._id,
         }),
       })
