@@ -87,14 +87,12 @@ export function KanbanBoard({ projectId }) {
 
   const projectTitle = "Project"
 
-
   const filteredTasks = tasks.filter(
     (task) =>
       task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       task.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       task.assignee.toLowerCase().includes(searchTerm.toLowerCase()),
   )
-
 
   const tasksByStatus = {
     todo: filteredTasks.filter((task) => task.status === "todo"),
@@ -119,7 +117,6 @@ export function KanbanBoard({ projectId }) {
   }
 
   const handleTaskStatusChange = (taskId, newStatus) => {
-    
     updateTask(taskId, { status: newStatus })
   }
 
@@ -197,8 +194,6 @@ export function KanbanBoard({ projectId }) {
                   key={task._id}
                   className="cursor-pointer hover:shadow-lg transition-all duration-300 group backdrop-blur-sm bg-white/80 border-white/20 hover:bg-white/90"
                 >
-                   
-
                   <CardHeader className="pb-2">
                     <div className="flex items-center justify-between">
                       <div className="text-xs text-gray-500 mb-1">{task._id}</div>
@@ -208,18 +203,35 @@ export function KanbanBoard({ projectId }) {
                             variant="ghost"
                             size="icon"
                             className="w-6 h-6 opacity-0 group-hover:opacity-100 hover:bg-white/80"
+                            onClick={(e) => e.stopPropagation()}
                           >
                             <MoreHorizontal className="w-3 h-3" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="backdrop-blur-sm bg-white/95 border-white/20">
-                          <DropdownMenuItem onClick={() => handleTaskStatusChange(task._id, "in-progress")}>
+                          <DropdownMenuItem 
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleTaskStatusChange(task._id, "in-progress")
+                            }}
+                          >
                             Move to In Progress
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleTaskStatusChange(task._id, "completed")}>
+                          <DropdownMenuItem 
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleTaskStatusChange(task._id, "completed")
+                            }}
+                          >
                             Move to Done
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteTask(task._id)}>
+                          <DropdownMenuItem 
+                            className="text-red-600" 
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDeleteTask(task._id)
+                            }}
+                          >
                             Delete Task
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -279,6 +291,7 @@ export function KanbanBoard({ projectId }) {
             <div className="space-y-3 flex-1 overflow-y-auto pr-2">
               {tasksByStatus.inProgress.map((task) => (
                 <Card
+                  onClick={() => handleCardClick(task)}
                   key={task._id}
                   className="cursor-pointer hover:shadow-lg transition-all duration-300 group backdrop-blur-sm bg-white/80 border-white/20 hover:bg-white/90"
                 >
@@ -291,18 +304,35 @@ export function KanbanBoard({ projectId }) {
                             variant="ghost"
                             size="icon"
                             className="w-6 h-6 opacity-0 group-hover:opacity-100 hover:bg-white/80"
+                            onClick={(e) => e.stopPropagation()}
                           >
                             <MoreHorizontal className="w-3 h-3" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="backdrop-blur-sm bg-white/95 border-white/20">
-                          <DropdownMenuItem onClick={() => handleTaskStatusChange(task._id, "todo")}>
+                          <DropdownMenuItem 
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleTaskStatusChange(task._id, "todo")
+                            }}
+                          >
                             Move to To Do
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleTaskStatusChange(task._id, "done")}>
+                          <DropdownMenuItem 
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleTaskStatusChange(task._id, "completed")
+                            }}
+                          >
                             Move to Done
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteTask(task._id)}>
+                          <DropdownMenuItem 
+                            className="text-red-600" 
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDeleteTask(task._id)
+                            }}
+                          >
                             Delete Task
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -362,6 +392,7 @@ export function KanbanBoard({ projectId }) {
             <div className="space-y-3 flex-1 overflow-y-auto pr-2">
               {tasksByStatus.done.map((task) => (
                 <Card
+                  onClick={() => handleCardClick(task)}
                   key={task._id}
                   className="cursor-pointer hover:shadow-lg transition-all duration-300 group opacity-75 backdrop-blur-sm bg-white/60 border-white/20 hover:bg-white/80"
                 >
@@ -374,18 +405,35 @@ export function KanbanBoard({ projectId }) {
                             variant="ghost"
                             size="icon"
                             className="w-6 h-6 opacity-0 group-hover:opacity-100 hover:bg-white/80"
+                            onClick={(e) => e.stopPropagation()}
                           >
                             <MoreHorizontal className="w-3 h-3" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="backdrop-blur-sm bg-white/95 border-white/20">
-                          <DropdownMenuItem onClick={() => handleTaskStatusChange(task._id, "todo")}>
+                          <DropdownMenuItem 
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleTaskStatusChange(task._id, "todo")
+                            }}
+                          >
                             Move to To Do
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleTaskStatusChange(task._id, "inProgress")}>
+                          <DropdownMenuItem 
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleTaskStatusChange(task._id, "in-progress")
+                            }}
+                          >
                             Move to In Progress
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteTask(task._id)}>
+                          <DropdownMenuItem 
+                            className="text-red-600" 
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDeleteTask(task._id)
+                            }}
+                          >
                             Delete Task
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -492,7 +540,6 @@ export function KanbanBoard({ projectId }) {
         </DialogContent>
       </Dialog>
 
-
        <Dialog open={!!selectedTask} onOpenChange={() => setSelectedTask(null)}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
@@ -544,7 +591,6 @@ export function KanbanBoard({ projectId }) {
               />
             </div>
 
-
             {/* Priority */}
             <div>
               <Label className="text-sm font-medium">Priority</Label>
@@ -582,7 +628,6 @@ export function KanbanBoard({ projectId }) {
         </DialogFooter>
       </DialogContent>
     </Dialog>
-
 
     </div>
   )

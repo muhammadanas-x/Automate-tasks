@@ -140,7 +140,7 @@ export async function POST(request) {
           `
 
         const ragResponse = await openai.chat.completions.create({
-          model: 'openai/gpt-5-2025-08-07',
+          model: 'openai/gpt-5-chat-latest',
           messages: [
             {
               role: 'system',
@@ -208,7 +208,7 @@ export async function POST(request) {
         }`
 
     const response = await openai.chat.completions.create({
-      model: 'openai/gpt-5-2025-08-07',
+      model: 'openai/gpt-5-chat-latest',
       messages: [
         {
           role: 'system',
@@ -223,6 +223,8 @@ export async function POST(request) {
       max_tokens: 1000
     })
 
+
+    console.log(response.choices[0].message)
     const content = response.choices[0].message.content
     console.log("[v0] OpenAI response:", content)
 
