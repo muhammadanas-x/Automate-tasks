@@ -6,31 +6,41 @@ import Project from "@/models/Project"
 import jwt from "jsonwebtoken"
 import mongoose from "mongoose"
 import { Pinecone } from '@pinecone-database/pinecone'
-import { pipeline } from '@xenova/transformers'
+import OpenAI from "openai"
 
 // Pinecone setup
 const pc = new Pinecone({
   apiKey: process.env.PINECONE_API_KEY,
 })
 
+const openai = new OpenAI({
+  baseURL: 'https://api.aimlapi.com/v1',
+  apiKey: process.env.OPENAI_API_KEY, // or pass key in another way
+});
+
+
+
+
+async function embed(text) {
+  const response = await openai.embeddings.create({
+    model: 'text-embedding-3-small',
+    input: text,
+    encoding_format: 'float', // makes sure we get normal JS numbers
+  });
+
+  // response.data[0].embedding is already number[]
+  return response.data[0].embedding;
+}
+
+
 const index = pc.index('task-vectors')
 
 // Initialize the embedding model (1024 dimensions)
-let embedder = null
 
-async function getEmbedder() {
-  if (!embedder) {
-    console.log('Loading 1024D embedder...')
-    embedder = await pipeline('feature-extraction', 'Xenova/e5-large-v2')
-    console.log('1024D Embedder loaded successfully')
-  }
-  return embedder
-}
 
 // Generate embedding for task content
 async function generateTaskEmbedding(task) {
   try {
-    const model = await getEmbedder()
     
     // Combine relevant task fields for embedding
     const taskText = [
@@ -46,14 +56,9 @@ async function generateTaskEmbedding(task) {
       throw new Error('No text content available for embedding')
     }
     
-    const output = await model(taskText, { pooling: 'mean', normalize: true })
-    const embedding = Array.from(output.data)
-    
-    if (embedding.length !== 1024) {
-      throw new Error(`Expected 1024 dimensions, got ${embedding.length}`)
-    }
-    
-    return embedding
+    const output = await embed(taskText)
+
+    return output
   } catch (error) {
     console.error('Error generating embedding:', error)
     throw error

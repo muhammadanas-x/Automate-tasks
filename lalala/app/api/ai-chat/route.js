@@ -1,9 +1,13 @@
 //api/ai-chat/route.js
 
 import { NextResponse } from "next/server"
-import { GoogleGenAI } from "@google/genai"
 
-const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY})
+// Initialize OpenAI client with AIMLAPI
+const { OpenAI } = require('openai');
+const openai = new OpenAI({
+  baseURL: 'https://api.aimlapi.com/v1',
+  apiKey: process.env.OPENAI_API_KEY, // Make sure to set this in your environment variables
+});
 
 // --- helper to safely parse JSON ---
 function safeJsonParse(str) {
@@ -25,13 +29,14 @@ function safeJsonParse(str) {
 // --- helper to detect if user is asking for existing task info ---
 function isQueryingExistingTasks(message) {
   const queryKeywords = [
-    'show', 'find', 'search', 'get', 'what', 'which', 'where', 'when',
+    'show', 'find', 'search', 'get',
     'status of', 'progress', 'update on', 'assigned to', 'who is',
-    'how many', 'list', 'display', 'tell me about', 'info about',"show","taskStatus","is"
+    'how many', 'list', 'display', 'tell me about', 'info about',"show","taskStatus"
   ]
   
   const messageLower = message.toLowerCase()
-  return queryKeywords.some(keyword => messageLower.includes(keyword))
+  return queryKeywords.some(keyword => {if(messageLower.includes(keyword)){console.log(keyword)
+     return keyword}})
 }
 
 // --- helper to perform RAG search with authentication ---
@@ -54,9 +59,7 @@ async function performRAGSearch(query, request, projectId) {
       },
     })
 
-
     console.log(response)
-    
     
     if (!response.ok) {
       if (response.status === 404) {
@@ -115,7 +118,7 @@ export async function POST(request) {
           })
         }
 
-        // Use AI to generate a response based on the retrieved task data
+        // Use OpenAI to generate a response based on the retrieved task data
         const ragSystemPrompt = `You are an AI project management assistant. 
           The user asked about existing tasks and I found this relevant task data:
           
@@ -136,18 +139,24 @@ export async function POST(request) {
           }
           `
 
-        const ragResponse = await ai.models.generateContent({
-          model: "models/gemini-2.5-flash",
-          contents: [
+        const ragResponse = await openai.chat.completions.create({
+          model: 'openai/gpt-4o',
+          messages: [
             {
-              role: "user",
-              parts: [{ text: `${ragSystemPrompt}\n\nUser query: ${message}` }],
+              role: 'system',
+              content: ragSystemPrompt
             },
+            {
+              role: 'user',
+              content: `User query: ${message}`
+            }
           ],
+          temperature: 0.7,
+          max_tokens: 1000
         })
 
-        const ragContent = ragResponse.text
-        console.log("[v0] RAG-based Gemini response:", ragContent)
+        const ragContent = ragResponse.choices[0].message.content
+        console.log("[v0] RAG-based OpenAI response:", ragContent)
 
         const ragJsonResponse = safeJsonParse(ragContent || "{}")
         
@@ -170,7 +179,7 @@ export async function POST(request) {
       }
     }
 
-    // Original task creation logic
+    // Original task creation logic with OpenAI
     const systemPrompt = `You are an AI project management assistant. 
         Help users create and manage tasks for their projects. 
         DONT ADD MARKDOWN FORMATTED JSON
@@ -198,18 +207,24 @@ export async function POST(request) {
           "message": "string"
         }`
 
-    const response = await ai.models.generateContent({
-      model: "models/gemini-2.5-flash",
-      contents: [
+    const response = await openai.chat.completions.create({
+      model: 'openai/gpt-4o',
+      messages: [
         {
-          role: "user",
-          parts: [{ text: `${systemPrompt}\n\nUser: ${message}` }],
+          role: 'system',
+          content: systemPrompt
         },
+        {
+          role: 'user',
+          content: message
+        }
       ],
+      temperature: 0.7,
+      max_tokens: 1000
     })
 
-    const content = response.text
-    console.log("[v0] Gemini response:", content)
+    const content = response.choices[0].message.content
+    console.log("[v0] OpenAI response:", content)
 
     const jsonResponse = safeJsonParse(content || "{}")
 
