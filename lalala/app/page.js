@@ -161,7 +161,7 @@ export default function Home() {
       >
         <div className="flex items-center">
           <div className="text-3xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
-            TrelloAI
+            TaskWhisper
           </div>
         </div>
         <div className="flex items-center space-x-8">
@@ -380,7 +380,7 @@ export default function Home() {
       >
         <div className="max-w-6xl mx-auto text-center">
           <h2 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-6">
-            See TrelloAI in Action
+            See TaskWhisper in Action
           </h2>
           <p className="text-xl text-gray-600 mb-12 max-w-3xl mx-auto">
             Watch how a simple idea transforms into a complete project structure in real-time
@@ -395,7 +395,7 @@ export default function Home() {
                   <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                 </div>
                 <div className="flex-1 text-center">
-                  <span className="text-white/70 text-sm">TrelloAI Demo</span>
+                  <span className="text-white/70 text-sm">TaskWhisper Demo</span>
                 </div>
               </div>
               <div className="bg-white/5 rounded-xl p-4 text-left">
@@ -478,7 +478,7 @@ export default function Home() {
                 ))}
               </div>
               <p className="text-gray-700 mb-6 leading-relaxed">
-                "TrelloAI transformed how I manage projects. What used to take hours of setup now happens in minutes.
+                "TaskWhisper transformed how I manage projects. What used to take hours of setup now happens in minutes.
                 The AI truly understands what I need."
               </p>
               <div className="flex items-center">
@@ -532,7 +532,7 @@ export default function Home() {
                 ))}
               </div>
               <p className="text-gray-700 mb-6 leading-relaxed">
-                "Our team productivity increased by 40% since we started using TrelloAI. The automation features are
+                "Our team productivity increased by 40% since we started using TaskWhisper. The automation features are
                 incredible and save us hours daily."
               </p>
               <div className="flex items-center">
@@ -681,10 +681,10 @@ export default function Home() {
       >
         <div className="max-w-7xl mx-auto text-center">
           <div className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-4">
-            TrelloAI
+            TaskWhisper
           </div>
           <p className="text-gray-500 mb-4">Transforming ideas into organized projects with AI</p>
-          <p className="text-sm text-gray-400">&copy; 2024 TrelloAI. All rights reserved.</p>
+          <p className="text-sm text-gray-400">&copy; 2024 TaskWhisper. All rights reserved.</p>
         </div>
       </footer>
     </div>
